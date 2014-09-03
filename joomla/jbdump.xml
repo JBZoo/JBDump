@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<install version="1.5" type="plugin" group="system" method="upgrade">
+	<name>System - JBDump</name>
+	<author>Joomla-book.ru</author>
+	<creationDate>11 2011</creationDate>
+	<copyright>Joomla-book.ru</copyright>
+	<license>GNU/GPL</license>
+	<authorEmail></authorEmail>
+	<authorUrl>http://joomla-book.ru/blog/jb-creations/jbdump</authorUrl>
+	<version>1.2.10</version>
+	<description>
+        <![CDATA[
+            Library for dump variables and profiling PHP code<br/><br/>
+            <ul>
+                <li><a href='http://joomla-book.ru/blog/jb-creations/jbdump' target='_blank'>About JBDump</a></li>
+                <li><a href='http://joomla-book.ru/about-us/donations' target='_blank'>Donate</a></li>
+                <li><a href='mailto:admin@joomla-book.ru'>admin@joomla-book.ru</a></li>
+        ]]>    
+    </description>
+	<files>
+		<filename plugin="jbdump">jbdump.php</filename>
+		<filename>class.jbdump.php</filename>
+	</files>
+    
+	<config>
+		<fields name="params">
+            <fieldset name="logging" label="log Path">
+                <field name=" ----- Logger config" type="spacer" />
+				<field name="logPath" type="text" default="" description="Absolute log path, default in Joomla logs folder" label="log Path" />
+                <field name="logFile" type="text" default="" description="Log filename, default current date" label="log File" />
+                <field name="serialize" type="list" default="print_r" description="Serialize type before write to log file" label="Serialize">
+                    <option value="none">none</option>
+                    <option value="json">json</option>
+                    <option value="serialize">serialize</option>
+                    <option value="print_r">print_r</option>
+                    <option value="var_dump">var_dump</option>
+                    <option value="var_dump">var_dump</option>
+                </field>
+                <field name="autoProfile" type="radio" default="1" description="if true, then JBDump::profiler() call automatically after stop a PHP script" label="Auto profile">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="profileToFile" type="radio" default="0" description="If autoProfile enabled, the profiler will be recorded in the log, else show in browser" label="Profile to file">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+
+                <field name=" ----- Sorting (ASC)" type="spacer" />
+                <field name="sort_array" type="radio" default="0" description="" label="by array keys">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="sort_object" type="radio" default="1" description="" label="by property names">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="sort_methods" type="radio" default="1" description="" label="by methods names">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                
+                <field name=" ----- Register own handler" type="spacer" />
+                <field name="handler_error" type="radio" default="1" description="" label="for PHP errors">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="handler_exception" type="radio" default="1" description="" label="for all exeptions">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="handler_context" type="radio" default="0" description="" label="show context for errors">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>                
+                
+                <field name=" ----- Personal dump" type="spacer" />
+                <field name="ip" type="text" default="" description="Address for which to work debugging" label="IP" />
+                <field name="requestParam" type="text" default="" description="$_REQUEST key for which to work debugging" label="Request param" />
+                <field name="requestValue" type="text" default="" description="$_REQUEST value for which to work debugging" label="Request value" />
+
+                <field name=" ----- Others params" type="spacer" />
+                <field name="stringLength" type="text" default="50" description="Cutting long string" label="String length" />
+                <field name="maxDepth" type="text" default="3" description="The maximum depth of the dump" label="Max depth" />
+                <field name="showMethods" type="radio" default="1" description="Show object methods" label="Show methods">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="allToLog" type="radio" default="0" description="All dumps record to log file and don't show in browser" label="All to log">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="showArgs" type="radio" default="0" label="Show Args in backtrace">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="lite_mode" type="radio" default="0" label="Lite messages for errors and exceptions">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                
+			</fieldset>
+		</fields>
+	</config>
+</install>

@@ -1,0 +1,42 @@
+<?php
+/**
+ * @package     JBDump init
+ * @version     1.3.0
+ * @author      admin@joomla-book.ru
+ * @link        http://joomla-book.ru/
+ * @copyright   Copyright (c) 2009-2011 Joomla-book.ru
+ * @license     GNU General Public License version 2 or later; see LICENSE
+ */
+
+// quick on/off
+if (1) {
+
+    // include JBDump library
+    require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'class.jbdump.php';
+
+    // init and configuration JBDump library
+    JBDump::i(array());
+
+    // usability methods
+    if (!function_exists('dump')) {
+        function dump($var = 'JBDump::variable no set', $isDie = true, $name = '...')
+        {
+            $_this = JBDump::i();
+
+            if ($var !== 'JBDump::variable no set') {
+                if ($_this->isDebug()) {
+
+                    $params = array('trace' => debug_backtrace());
+                    $_this->dump($var, $name, $params);
+
+                    if ($isDie) {
+                        die('JBDump_die');
+                    }
+                }
+            }
+
+            return $_this;
+        }
+    }
+
+}
