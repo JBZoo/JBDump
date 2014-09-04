@@ -2,7 +2,7 @@
 /**
  * Library for dump variables and profiling PHP code
  * The idea and the look was taken from Krumo project
- * PHP version 5.2 or higher
+ * PHP version 5.3 or higher
  *
  * Example:<br/>
  *      jbdump($myLoveVariable);<br/>
@@ -13,18 +13,24 @@
  *      jbdump::i()->post()->get()->mark('Profiler mark');<br/>
  *
  * Simple include in project on index.php file
- *      require_once './class.jbdump.php';
+ *      if (file_exists( dirname(__FILE__) . '/class.jbdump.php')) { require_once dirname(__FILE__) . '/class.jbdump.php'; }
  *
  * @package     JBDump
- * @version     1.3.0
- * @copyright   Copyright (c) 2009-2012 Joomla-book.ru
- * @license     GNU General Public License version 2 or later
- * @author      Denis Smetannikov aka smet.denis <admin@joomla-book.ru>
+ * @version     1.4.0
+ * @copyright   Copyright (c) 2009-2014 JBDump.org
+ * @license     http://www.gnu.org/licenses/gpl.html GNU/GPL
+ * @author      SmetDenis <admin@JBDump.org>
  * @link        http://joomla-book.ru/projects/jbdump
- * @link        http://krumo.sourceforge.net/
+ * @link        http://JBDump.org/
  * @link        http://code.google.com/intl/ru-RU/apis/chart/index.html
  */
 
+// Check PHP version
+!version_compare(PHP_VERSION, '5.3.10', '=>') or die('Your host needs to use PHP 5.3.10 or higher to run JBDump');
+
+/**
+ * Class JBDump
+ */
 class JBDump
 {
     /**
@@ -48,7 +54,7 @@ class JBDump
         // // // profiler
         'profiler' => array(
             'auto'      => true, // Result call automatically on destructor
-            'render'    => 29, // Profiler render (bit mask). See constants jbdump::PROFILER_RENDER_*
+            'render'    => 20, // Profiler render (bit mask). See constants jbdump::PROFILER_RENDER_*
             'showStart' => 0, // Set auto mark after jbdump init
             'showEnd'   => 0, // Set auto mark before jbdump destruction
         ),
@@ -70,10 +76,10 @@ class JBDump
         // // // error handlers
         'errors'   => array(
             'reporting'          => false, // set error reporting level while construct
-            'errorHandler'       => true, // register own handler for PHP errors
+            'errorHandler'       => false, // register own handler for PHP errors
             'errorBacktrace'     => false, // show backtrace for errors
-            'exceptionHandler'   => true, // register own handler for all exeptions
-            'exceptionBacktrace' => true, // show backtrace for exceptions
+            'exceptionHandler'   => false, // register own handler for all exeptions
+            'exceptionBacktrace' => false, // show backtrace for exceptions
             'context'            => false, // show context for errors
             'logHidden'          => false, // if error message not show, log it
             'logAll'             => false, // log all error in syslog
@@ -88,14 +94,14 @@ class JBDump
 
         // // // dump config
         'dump'     => array(
-            'render'            => 'html', // (lite|log|mail|print_r|var_dump|html)
-            'stringLength'      => 100, // cutting long string
-            'maxDepth'          => 5, // the maximum depth of the dump
-            'showMethods'       => true, // show object methods
-            'die'               => false, // die after dump variable
-            'stringExtra'       => true, // always show extra for strings
-            'stringTextarea'    => false, // show string vars in <textarea> or in <pre>
-            'expandLevel'       => 0, // expand the list to the specified depth
+            'render'         => 'html', // (lite|log|mail|print_r|var_dump|html)
+            'stringLength'   => 100, // cutting long string
+            'maxDepth'       => 4, // the maximum depth of the dump
+            'showMethods'    => true, // show object methods
+            'die'            => false, // die after dumping variable
+            'stringExtra'    => true, // always show extra for strings
+            'stringTextarea' => true, // show string vars in <textarea> or in <pre>
+            'expandLevel'    => 1, // expand the list to the specified depth
         ),
     );
 
@@ -109,7 +115,7 @@ class JBDump
      * Library version
      * @var string
      */
-    const VERSION = '1.3.0';
+    const VERSION = '1.4.0';
 
     /**
      * Library version
@@ -136,7 +142,7 @@ class JBDump
      * Site url
      * @var string
      */
-    protected $_site = 'http://joomla-book.ru/projects/jbdump';
+    protected $_site = 'http://jbdump.org/';
 
     /**
      * Last backtrace
@@ -154,7 +160,7 @@ class JBDump
      * Absolute path for all log files
      * @var string
      */
-    protected $_logpath = null;
+    protected $_logPath = null;
 
     /**
      * Current depth in current dumped object or array
@@ -187,14 +193,14 @@ class JBDump
     protected $_prevMemory = 0.0;
 
     /**
-     * Fix bug anticycling destructor
+     * Fix bug anti cycling destructor
      * @var bool
      */
     protected static $_isDie = false;
 
     /**
      * Constructor, set internal variables and self configuration
-     * @param array  $options    OPTIONAL  Initialization parameters
+     * @param array $options Initialization parameters
      */
     protected function __construct(array $options = array())
     {
@@ -210,12 +216,12 @@ class JBDump
 
         $this->_start        = $this->_microtime();
         $this->_bufferInfo[] = array(
-            'time'        => 0,
-            'timeDiff'    => 0,
-            'memory'      => self::_getMemory(),
-            'memoryDiff'  => 0,
-            'label'       => 'jbdump::init',
-            'trace'       => '',
+            'time'       => 0,
+            'timeDiff'   => 0,
+            'memory'     => self::_getMemory(),
+            'memoryDiff' => 0,
+            'label'      => 'jbdump::init',
+            'trace'      => '',
         );
 
         return $this;
@@ -241,8 +247,7 @@ class JBDump
     /**
      * Returns the global JBDump object, only creating it
      * if it doesn't already exist
-     * @static
-     * @param   array   $options    OPTIONAL  Initialization parameters
+     * @param   array $options Initialization parameters
      * @return  JBDump
      */
     public static function i($options = array())
@@ -251,7 +256,6 @@ class JBDump
 
         if (!isset($instance)) {
             $instance = new self($options);
-
             if (self::$_config['profiler']['showStart']) {
                 self::mark('jbdump::start');
             }
@@ -289,8 +293,8 @@ class JBDump
             if (self::$_config['personal']['requestParam'] && $result) {
 
                 if (isset($_REQUEST[self::$_config['personal']['requestParam']])
-                        &&
-                        $_REQUEST[self::$_config['personal']['requestParam']] == self::$_config['personal']['requestValue']
+                    &&
+                    $_REQUEST[self::$_config['personal']['requestParam']] == self::$_config['personal']['requestValue']
                 ) {
                     $result = true;
                 } else {
@@ -305,9 +309,8 @@ class JBDump
 
     /**
      * Force show PHP error messages
-     * @static
-     * @param $reportLevel OPTIONAL error_reporting
-     * @return bool|JBDump
+     * @param $reportLevel error_reporting level
+     * @return bool
      */
     public static function showErrors($reportLevel = -1)
     {
@@ -337,7 +340,7 @@ class JBDump
 
     /**
      * Set max execution time
-     * @param   integer $time  OPTIONAL  Time limit in seconds
+     * @param   integer $time Time limit in seconds
      * @return  JBDump
      */
     public static function maxTime($time = 600)
@@ -364,7 +367,7 @@ class JBDump
 
     /**
      * Disable debug
-     * @return  JBDump
+     * @return JBDump
      */
     public static function off()
     {
@@ -374,7 +377,7 @@ class JBDump
 
     /**
      * Set debug parameters
-     * @param array  $data    Params for debug, see self::$_config vars
+     * @param array $data Params for debug, see self::$_config vars
      * @param string $section
      * @return JBDump
      */
@@ -397,10 +400,10 @@ class JBDump
 
         // set log path
         if (isset($data['log']['path']) && $data['log']['path']) {
-            $this->_logpath = $data['log']['path'];
+            $this->_logPath = $data['log']['path'];
 
-        } elseif (!self::$_config['log']['path'] || !$this->_logpath) {
-            $this->_logpath = dirname(__FILE__) . self::DS . 'logs';
+        } elseif (!self::$_config['log']['path'] || !$this->_logPath) {
+            $this->_logPath = dirname(__FILE__) . self::DS . 'logs';
         }
 
         // set log filename
@@ -412,7 +415,7 @@ class JBDump
             $logFile = 'jbdump';
         }
 
-        $this->_logfile = $this->_logpath . self::DS . $logFile . '_' . date('Y.m.d') . '.log.php';
+        $this->_logfile = $this->_logPath . self::DS . $logFile . '_' . date('Y.m.d') . '.log.php';
 
         // merge new params with of config
         foreach ($data as $key => $value) {
@@ -469,9 +472,9 @@ class JBDump
 
     /**
      * Add message to log file
-     * @param   mixed   $entry    Text to log file
-     * @param   string  $markName OPTIONAL  Name of log record
-     * @param   array   $params   OPTIONAL  Additional params
+     * @param   mixed $entry Text to log file
+     * @param   string $markName Name of log record
+     * @param   array $params Additional params
      * @return  JBDump
      */
     public static function log($entry, $markName = '...', $params = array())
@@ -552,8 +555,8 @@ class JBDump
 
         if (!@file_exists($this->_logfile)) {
 
-            if (!is_dir($this->_logpath) && $this->_logpath) {
-                mkdir($this->_logpath, 0777, true);
+            if (!is_dir($this->_logPath) && $this->_logPath) {
+                mkdir($this->_logPath, 0777, true);
             }
 
             $header[] = "#<?php die('Direct Access To Log Files Not Permitted'); ?>";
@@ -619,8 +622,8 @@ class JBDump
 
     /**
      * Parse url
-     * @param   string  $url      URL string
-     * @param   string  $varname  OPTIONAL URL name
+     * @param   string $url URL string
+     * @param   string $varname URL name
      * @return  JBDump
      */
     public static function url($url, $varname = '...')
@@ -653,7 +656,7 @@ class JBDump
 
     /**
      * Show defined functions
-     * @param   bool $showInternal OPTIONAL Get only internal functions
+     * @param   bool $showInternal Get only internal functions
      * @return  JBDump
      */
     public static function functions($showInternal = false)
@@ -676,7 +679,6 @@ class JBDump
 
     /**
      * Show defined constants
-     * @static
      * @param bool $showAll Get only user defined functions
      * @return bool|JBDump
      */
@@ -696,7 +698,7 @@ class JBDump
 
     /**
      * Show loaded PHP extensions
-     * @param   bool $zend  Get only Zend extensions
+     * @param   bool $zend Get only Zend extensions
      * @return  JBDump
      */
     public static function extensions($zend = false)
@@ -759,8 +761,8 @@ class JBDump
 
     /**
      * Show php.ini content (PHP API)
-     * @param   string  $extension  Extension name
-     * @param   bool    $details    Retrieve details settings or only the current value for each setting
+     * @param   string $extension Extension name
+     * @param   bool $details Retrieve details settings or only the current value for each setting
      * @return  bool|JBDump
      */
     public static function conf($extension = '', $details = true)
@@ -800,7 +802,6 @@ class JBDump
 
     /**
      * Show $_REQUEST array or dump $_GET, $_POST, $_COOKIE
-     * @static
      * @param bool $notReal Get real $_REQUEST array
      * @return bool|JBDump
      */
@@ -857,10 +858,9 @@ class JBDump
     }
 
     /**
-     * Show parsed JSON data
-     * @static
-     * @param        $jsonData  JSON data
-     * @param string $name      OPTIONAL Variable name
+     * Convert JSON format to human readability
+     * @param $json
+     * @param string $name
      * @return bool|JBDump
      */
     public static function json($json, $name = '...')
@@ -869,25 +869,11 @@ class JBDump
             return false;
         }
 
-        $jsonData = json_decode($json);        
+        $jsonData = json_decode($json);
         $result   = self::i()->_jsonEncode($jsonData);
-        
+
         return self::i()->dump($result, $name);
     }
-    
-    /**
-     * Convert JSON format to human readability
-     * @static
-     * @param string $json
-     * @param string $varName
-     * @return JBDump
-     */
-    public static function jsonFormat($json, $varName = '...')
-    {
-
-
-        return $result;
-    }    
 
     /**
      * Show $_ENV array
@@ -934,7 +920,6 @@ class JBDump
 
     /**
      * Convert timestamp to normal date, in DATE_RFC822 format
-     * @static
      * @param   null|integer $timestamp Time in Unix timestamp format
      * @return  bool|JBDump
      */
@@ -988,10 +973,9 @@ class JBDump
 
     /**
      * Wrapper for PHP print_r function
-     * @static
-     * @param mixed  $var     The variable to dump
-     * @param string $varname OPTIONAL Label to prepend to output
-     * @param array  $params  OPTIONAL Echo output if true
+     * @param mixed $var The variable to dump
+     * @param string $varname Label to prepend to output
+     * @param array $params Echo output if true
      * @return bool|JBDump
      */
     public static function print_r($var, $varname = '...', $params = array())
@@ -1010,10 +994,9 @@ class JBDump
 
     /**
      * Wrapper for PHP var_dump function
-     * @static
-     * @param   mixed   $var     The variable to dump
-     * @param   string  $varname OPTIONAL Echo output if true
-     * @param   array   $params  OPTIONAL Additionls params
+     * @param   mixed $var The variable to dump
+     * @param   string $varname Echo output if true
+     * @param   array $params Additionls params
      * @return bool|JBDump
      */
     public static function var_dump($var, $varname = '...', $params = array())
@@ -1041,8 +1024,8 @@ class JBDump
 
     /**
      * Get system backtrace in formated view
-     * @param   bool $trace      Custom php backtrace
-     * @param   bool $addObject  Show objects in result
+     * @param   bool $trace Custom php backtrace
+     * @param   bool $addObject Show objects in result
      * @return  JBDump
      */
     public static function trace($trace = null, $addObject = false)
@@ -1063,7 +1046,6 @@ class JBDump
 
     /**
      * Show declared classes
-     * @static
      * @param bool $sort
      * @return bool|JBDump
      */
@@ -1083,7 +1065,6 @@ class JBDump
 
     /**
      * Show declared classes
-     * @static
      * @param $object
      * @return bool|JBDump
      */
@@ -1105,7 +1086,7 @@ class JBDump
 
     /**
      * Dump info about class (object)
-     * @param   string|object  $data    Object or class name
+     * @param   string|object $data Object or class name
      * @return  JBDump
      */
     public static function classInfo($data)
@@ -1120,8 +1101,7 @@ class JBDump
 
     /**
      * Dump all info about extension
-     * @static
-     * @param   string  $extensionName  Extension name
+     * @param   string $extensionName Extension name
      * @return  JBDump
      */
     public static function extInfo($extensionName)
@@ -1137,7 +1117,7 @@ class JBDump
 
     /**
      * Dump all file info
-     * @param   string  $file   path to file
+     * @param   string $file path to file
      * @return  JBDump
      */
     public static function pathInfo($file)
@@ -1148,8 +1128,7 @@ class JBDump
 
     /**
      * Dump all info about function
-     * @static
-     * @param   string|Closure $functionName    Closure or function name
+     * @param   string|Closure $functionName Closure or function name
      * @return  JBDump
      */
     public static function funcInfo($functionName)
@@ -1180,7 +1159,7 @@ class JBDump
     /**
      * Output a time mark
      * The mark is returned as text current profiler status
-     * @param   string  $label OPTIONAL A label for the time mark
+     * @param   string $label A label for the time mark
      * @return  JBDump
      */
     public static function mark($label = '')
@@ -1217,7 +1196,7 @@ class JBDump
 
     /**
      * Show profiler result
-     * @param   int    $mode Render mode
+     * @param   int $mode Render mode
      * @return  JBDump
      */
     public function profiler($mode = 1)
@@ -1253,7 +1232,6 @@ class JBDump
 
     /**
      * Convert profiler memory value to usability view
-     * @static
      * @param int $memoryBits
      * @return float
      */
@@ -1264,7 +1242,6 @@ class JBDump
 
     /**
      * Convert profiler time value to usability view
-     * @static
      * @param $time
      * @return float
      */
@@ -1275,7 +1252,6 @@ class JBDump
 
     /**
      * Convert profiler mark to string
-     * @static
      * @param array $mark
      * @return string
      */
@@ -1360,28 +1336,28 @@ class JBDump
     {
         $this->_initAssets();
         ?>
-    <div id="jbdump_profile_chart_table" style="max-width: 1000px;margin:0 auto;text-align:left;"></div>
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript">
-        google.load('visualization', '1', {packages:['table']});
-        google.setOnLoadCallback(function () {
+        <div id="jbdump_profile_chart_table" style="max-width: 1000px;margin:0 auto;text-align:left;"></div>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript">
+            google.load('visualization', '1', {packages: ['table']});
+            google.setOnLoadCallback(function () {
 
-            var data = new google.visualization.DataTable();
+                var data = new google.visualization.DataTable();
 
-            data.addColumn('number', '#');
-            data.addColumn('string', 'label');
-            data.addColumn('string', 'file');
-            data.addColumn('number', 'time, ms');
-            data.addColumn('number', 'time delta, ms');
-            data.addColumn('number', 'memory, MB');
-            data.addColumn('number', 'memory delta, MB');
+                data.addColumn('number', '#');
+                data.addColumn('string', 'label');
+                data.addColumn('string', 'file');
+                data.addColumn('number', 'time, ms');
+                data.addColumn('number', 'time delta, ms');
+                data.addColumn('number', 'memory, MB');
+                data.addColumn('number', 'memory delta, MB');
 
-            data.addRows(<?php echo count($this->_bufferInfo);?>);
+                data.addRows(<?php echo count($this->_bufferInfo);?>);
 
-            <?php
-            $i = 0;
-            foreach ($this->_bufferInfo as $key=> $mark) {
-                ?>
+                <?php
+                $i = 0;
+                foreach ($this->_bufferInfo as $key=> $mark) {
+                    ?>
                 data.setCell(<?php echo $key;?>, 0, <?php echo ++$i;?>);
                 data.setCell(<?php echo $key;?>, 1, '<?php echo $mark['label'];?>');
                 data.setCell(<?php echo $key;?>, 2, '<?php echo $mark['trace'];?>');
@@ -1392,17 +1368,17 @@ class JBDump
                 <?php
             } ?>
 
-            var formatter = new google.visualization.TableBarFormat({width:120});
-            formatter.format(data, 4);
-            formatter.format(data, 6);
+                var formatter = new google.visualization.TableBarFormat({width: 120});
+                formatter.format(data, 4);
+                formatter.format(data, 6);
 
-            var table = new google.visualization.Table(document.getElementById('jbdump_profile_chart_table'));
-            table.draw(data, {
-                allowHtml    :true,
-                showRowNumber:false
+                var table = new google.visualization.Table(document.getElementById('jbdump_profile_chart_table'));
+                table.draw(data, {
+                    allowHtml    : true,
+                    showRowNumber: false
+                });
             });
-        });
-    </script>
+        </script>
     <?php
     }
 
@@ -1412,64 +1388,64 @@ class JBDump
     protected function _profilerRenderChart()
     {
         ?>
-    <div id="jbdump_profilter_chart_time" style="max-width: 1000px;margin:0 auto;text-align:left;"></div>
-    <div id="jbdump_profilter_chart_memory" style="max-width: 1000px;margin:0 auto;text-align:left;"></div>
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript">
-        google.load("visualization", "1", {packages:["corechart"]});
-        google.setOnLoadCallback(function drawChart() {
-            //////////////////////////// time ////////////////////////////
-            var data = new google.visualization.DataTable();
-            data.addColumn('string', 'Label');
-            data.addColumn('number', 'time, ms');
-            data.addColumn('number', 'time delta, ms');
-            data.addRows([
-                <?php
-                foreach ($this->_bufferInfo as $mark) {
-                    echo '[\'' . $mark['label'] . '\', '
-                            . self::_profilerFormatTime($mark['time']) . ', '
-                            . self::_profilerFormatTime($mark['timeDiff']) . '],';
-                } ?>
-            ]);
+        <div id="jbdump_profilter_chart_time" style="max-width: 1000px;margin:0 auto;text-align:left;"></div>
+        <div id="jbdump_profilter_chart_memory" style="max-width: 1000px;margin:0 auto;text-align:left;"></div>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript">
+            google.load("visualization", "1", {packages: ["corechart"]});
+            google.setOnLoadCallback(function drawChart() {
+                //////////////////////////// time ////////////////////////////
+                var data = new google.visualization.DataTable();
+                data.addColumn('string', 'Label');
+                data.addColumn('number', 'time, ms');
+                data.addColumn('number', 'time delta, ms');
+                data.addRows([
+                    <?php
+                    foreach ($this->_bufferInfo as $mark) {
+                        echo '[\'' . $mark['label'] . '\', '
+                                . self::_profilerFormatTime($mark['time']) . ', '
+                                . self::_profilerFormatTime($mark['timeDiff']) . '],';
+                    } ?>
+                ]);
 
-            var chart = new google.visualization.LineChart(document.getElementById('jbdump_profilter_chart_time'));
-            chart.draw(data, {
-                'width' :750,
-                'height':400,
-                'title' :'JBDump profiler by time'
+                var chart = new google.visualization.LineChart(document.getElementById('jbdump_profilter_chart_time'));
+                chart.draw(data, {
+                    'width' : 750,
+                    'height': 400,
+                    'title' : 'JBDump profiler by time'
+                });
+
+                //////////////////////////// memory ////////////////////////////
+                var data = new google.visualization.DataTable();
+
+                data.addColumn('string', 'Label');
+                data.addColumn('number', 'memory, MB');
+                data.addColumn('number', 'memory delta, MB');
+                data.addRows([
+                    <?php
+                    foreach ($this->_bufferInfo as $mark) {
+                        echo '[\'' . $mark['label'] . '\', '
+                                . self::_profilerFormatMemory($mark['memory']) . ', '
+                                . self::_profilerFormatMemory($mark['memoryDiff']) . '],';
+                    } ?>
+                ]);
+
+                var chart = new google.visualization.LineChart(document.getElementById('jbdump_profilter_chart_memory'));
+                chart.draw(data, {
+                    'width' : 750,
+                    'height': 400,
+                    'title' : 'JBDump profiler by memory'
+                });
             });
-
-            //////////////////////////// memory ////////////////////////////
-            var data = new google.visualization.DataTable();
-
-            data.addColumn('string', 'Label');
-            data.addColumn('number', 'memory, MB');
-            data.addColumn('number', 'memory delta, MB');
-            data.addRows([
-                <?php
-                foreach ($this->_bufferInfo as $mark) {
-                    echo '[\'' . $mark['label'] . '\', '
-                            . self::_profilerFormatMemory($mark['memory']) . ', '
-                            . self::_profilerFormatMemory($mark['memoryDiff']) . '],';
-                } ?>
-            ]);
-
-            var chart = new google.visualization.LineChart(document.getElementById('jbdump_profilter_chart_memory'));
-            chart.draw(data, {
-                'width' :750,
-                'height':400,
-                'title' :'JBDump profiler by memory'
-            });
-        });
-    </script>
+        </script>
     <?php
     }
 
     /**
      * Dumper variable
-     * @param   mixed   $data     Mixed data for dump
-     * @param   string  $varname  OPTIONAL Variable name
-     * @param   array   $params   OPTIONAL Additional params
+     * @param   mixed $data Mixed data for dump
+     * @param   string $varname Variable name
+     * @param   array $params Additional params
      * @return  JBDump
      */
     public static function dump($data, $varname = '...', $params = array())
@@ -1511,9 +1487,9 @@ class JBDump
 
     /**
      * Dump render - HTML
-     * @param mixed  $data
+     * @param mixed $data
      * @param string $varname
-     * @param array  $params
+     * @param array $params
      */
     protected function _dumpRenderHtml($data, $varname = '...', $params = array())
     {
@@ -1529,29 +1505,29 @@ class JBDump
         $text = $this->_getSourceFunction($this->_trace);
         $path = $this->_getSourcePath($this->_trace);
         ?>
-    <div class="krumo-root">
-        <ul class="krumo-node krumo-first">
-            <?php $this->_dump($data, $varname);?>
-            <li class="krumo-footnote">
+        <div class="jbdump-root">
+            <ul class="jbdump-node jbdump-first">
+                <?php $this->_dump($data, $varname); ?>
+                <li class="jbdump-footnote">
 
-                <div class="copyrights">
-                    <a href="<?php echo $this->_site;?>" target="_blank">JBDump v<?php echo self::VERSION;?></a>
-                </div>
+                    <div class="copyrights">
+                        <a href="<?php echo $this->_site; ?>" target="_blank">JBDump v<?php echo self::VERSION; ?></a>
+                    </div>
 
-                <?php if (self::$_config['showCall']) :?>
-                    <span class="krumo-call"><?php echo $text . ' ' . $path; ?></span>
-                <?php endif;?>
-            </li>
-        </ul>
-    </div>
+                    <?php if (self::$_config['showCall']) : ?>
+                        <span class="jbdump-call"><?php echo $text . ' ' . $path; ?></span>
+                    <?php endif; ?>
+                </li>
+            </ul>
+        </div>
     <?php
     }
 
     /**
      * Dump render - Lite mode
-     * @param mixed  $data
+     * @param mixed $data
      * @param string $varname
-     * @param array  $params
+     * @param array $params
      */
     protected function _dumpRenderLite($data, $varname = '...', $params = array())
     {
@@ -1574,7 +1550,7 @@ class JBDump
         $output[] = rtrim($printrOut, "\n");
         $output[] = "\n------------------------------</pre>\n";
         if (!self::isAjax()) {
-            echo '<pre class="krumo" style="text-align: left;">' . implode('', $output) . "</pre>\n";
+            echo '<pre class="jbdump" style="text-align: left;">' . implode('', $output) . "</pre>\n";
         } else {
             echo implode('', $output);
         }
@@ -1582,9 +1558,9 @@ class JBDump
 
     /**
      * Dump render - to logfile
-     * @param mixed  $data
+     * @param mixed $data
      * @param string $varname
-     * @param array  $params
+     * @param array $params
      */
     protected function _dumpRenderLog($data, $varname = '...', $params = array())
     {
@@ -1593,20 +1569,23 @@ class JBDump
 
     /**
      * Dump render - send to email
-     * @param mixed  $data
+     * @param mixed $data
      * @param string $varname
-     * @param array  $params
+     * @param array $params
      */
     protected function _dumpRenderMail($data, $varname = '...', $params = array())
     {
-        $this->mail(array('varname' => $varname,'data' => $data));
+        $this->mail(array(
+            'varname' => $varname,
+            'data'    => $data
+        ));
     }
 
     /**
      * Dump render - php print_r
-     * @param mixed  $data
+     * @param mixed $data
      * @param string $varname
-     * @param array  $params
+     * @param array $params
      */
     protected function _dumpRenderPrintr($data, $varname = '...', $params = array())
     {
@@ -1615,9 +1594,9 @@ class JBDump
 
     /**
      * Dump render - php var_dump
-     * @param mixed  $data
+     * @param mixed $data
      * @param string $varname
-     * @param array  $params
+     * @param array $params
      */
     protected function _dumpRenderVardump($data, $varname = '...', $params = array())
     {
@@ -1626,7 +1605,7 @@ class JBDump
 
     /**
      * Get all available hash from data
-     * @param   string  $data   Data from get hash
+     * @param   string $data Data from get hash
      * @return  JBDump
      */
     public static function hash($data)
@@ -1640,7 +1619,6 @@ class JBDump
 
     /**
      * Get current usage memory
-     * @static
      * @return int
      */
     protected static function _getMemory()
@@ -1666,13 +1644,11 @@ class JBDump
 
     /**
      * Get current microtime
-     * @static
      * @return float
      */
     public static function _microtime()
     {
-        list($usec, $sec) = explode(' ', microtime());
-        return ((float)$usec + (float)$sec);
+        return microtime(true);
     }
 
     /**
@@ -1685,8 +1661,8 @@ class JBDump
 
     /**
      * Maps type variable to a function
-     * @param   mixed   $data  Mixed data for dump
-     * @param   string  $name  OPTIONAL Variable name
+     * @param   mixed $data Mixed data for dump
+     * @param   string $name Variable name
      * @return  JBDump
      */
     protected function _dump($data, $name = '...')
@@ -1753,8 +1729,8 @@ class JBDump
 
     /**
      * Render HTML for object and array
-     * @param   array|object $data       Variablevalue
-     * @param   bool         $isExpanded Flag is current block expanded
+     * @param   array|object $data Variablevalue
+     * @param   bool $isExpanded Flag is current block expanded
      * @return  void
      */
     protected function _vars($data, $isExpanded = false)
@@ -1762,63 +1738,63 @@ class JBDump
         $_is_object = is_object($data);
 
         ?>
-    <div class="krumo-nest" style="<?php echo $isExpanded ? 'display:block' : 'display:none';?>">
-        <ul class="krumo-node">
-            <?php
-            $keys = ($_is_object) ? array_keys(get_object_vars($data)) : array_keys($data);
+        <div class="jbdump-nest" style="<?php echo $isExpanded ? 'display:block' : 'display:none'; ?>">
+            <ul class="jbdump-node">
+                <?php
+                $keys = ($_is_object) ? array_keys(get_object_vars($data)) : array_keys($data);
 
-            // sorting
-            if (self::$_config['sort']['object'] && $_is_object) {
-                sort($keys);
-            } elseif (self::$_config['sort']['array']) {
-                sort($keys);
-            }
-
-            // get entries
-            foreach ($keys as $key) {
-                $value = null;
-                if ($_is_object) {
-                    $value = $data->$key;
-                } else {
-                    if (array_key_exists($key, $data)) {
-                        $value = $data[$key];
-                    }
+                // sorting
+                if (self::$_config['sort']['object'] && $_is_object) {
+                    sort($keys);
+                } elseif (self::$_config['sort']['array']) {
+                    sort($keys);
                 }
 
-                $this->_dump($value, $key);
-            }
+                // get entries
+                foreach ($keys as $key) {
+                    $value = null;
+                    if ($_is_object) {
+                        $value = $data->$key;
+                    } else {
+                        if (array_key_exists($key, $data)) {
+                            $value = $data[$key];
+                        }
+                    }
 
-            // get methods
-            if ($_is_object && self::$_config['dump']['showMethods']) {
-                $methods = $this->_getMethods($data);
-                $this->_dump($methods, '&lt;! methods of "' . get_class($data) . '" !&gt;');
-            }
-            ?>
-        </ul>
-    </div>
+                    $this->_dump($value, $key);
+                }
+
+                // get methods
+                if ($_is_object && self::$_config['dump']['showMethods']) {
+                    $methods = $this->_getMethods($data);
+                    $this->_dump($methods, '&lt;! methods of "' . get_class($data) . '" !&gt;');
+                }
+                ?>
+            </ul>
+        </div>
     <?php
     }
 
     /**
      * Render HTML for NULL type
-     * @param   string  $name  Variable name
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _null($name)
     {
         ?>
-    <li class="krumo-child">
-        <div class="krumo-element" onMouseOver="krumo.over(this);" onMouseOut="krumo.out(this);">
-            <a class="krumo-name"><?php echo $name;?></a> (<em class="krumo-type krumo-null">NULL</em>)
-        </div>
-    </li>
+        <li class="jbdump-child">
+            <div class="jbdump-element" onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
+                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type jbdump-type-null">NULL</em>)
+            </div>
+        </li>
     <?php
     }
 
     /**
      * Render HTML for Boolean type
-     * @param   bool    $data  Variable
-     * @param   string  $name  Variable name
+     * @param   bool $data Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _boolean($data, $name)
@@ -1829,8 +1805,8 @@ class JBDump
 
     /**
      * Render HTML for Integer type
-     * @param   integer $data   Variable
-     * @param   string  $name   Variable name
+     * @param   integer $data Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _integer($data, $name)
@@ -1840,8 +1816,8 @@ class JBDump
 
     /**
      * Render HTML for float (double) type
-     * @param   float   $data   Variable
-     * @param   string  $name   Variable name
+     * @param   float $data Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _float($data, $name)
@@ -1851,8 +1827,8 @@ class JBDump
 
     /**
      * Render HTML for resource type
-     * @param   resource $data   Variable
-     * @param   string   $name   Variable name
+     * @param   resource $data Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _resource($data, $name)
@@ -1863,8 +1839,8 @@ class JBDump
 
     /**
      * Render HTML for string type
-     * @param   string $data    Variable
-     * @param   string $name    Variable name
+     * @param   string $data Variable
+     * @param   string $name Variable name
      * @param   string $advType String type (parse mode)
      * @return  void
      */
@@ -1877,7 +1853,7 @@ class JBDump
             $_extra = true;
             $_      = 'HTML Code';
 
-            $data = '<pre class="krumo">' . $data . '</pre>';
+            $data = '<pre class="jbdump">' . $data . '</pre>';
 
         } elseif ($advType == 'source') {
             $_extra = true;
@@ -1905,40 +1881,39 @@ class JBDump
                 $_ = htmlSpecialChars($_);
 
                 if (self::$_config['dump']['stringTextarea']) {
-                    $data = '<textarea readonly="readonly" class="krumo">' . htmlSpecialChars($data) . '</textarea>';
+                    $data = '<textarea readonly="readonly" class="jbdump">' . htmlSpecialChars($data) . '</textarea>';
                 } else {
-                    $data = '<pre class="krumo">' . htmlSpecialChars($data) . '</pre>';
+                    $data = '<pre class="jbdump">' . htmlSpecialChars($data) . '</pre>';
                 }
             }
 
         }
         ?>
-    <li class="krumo-child">
-        <div class="krumo-element <?php echo $_extra ? ' krumo-expand' : '';?>"
-            <?php if ($_extra) { ?> onClick="krumo.toggle(this);"<?php }?> onMouseOver="krumo.over(this);"
-             onMouseOut="krumo.out(this);">
-            <a class="krumo-name"><?php echo $name;?></a>
-            (<em class="krumo-type">String, <strong class="krumo-string-length"><?php echo $dataLength; ?></strong></em>)
-            <strong class="krumo-string"><?php echo $_;?></strong>
-        </div>
-        <?php if ($_extra) { ?>
-        <div class="krumo-nest" style="display:none;">
-            <ul class="krumo-node">
-                <li class="krumo-child">
-                    <div class="krumo-preview"><?php echo $data;?></div>
-                </li>
-            </ul>
-        </div>
-        <?php } ?>
-    </li>
+        <li class="jbdump-child">
+            <div class="jbdump-element <?php echo $_extra ? ' jbdump-expand' : ''; ?>"
+                <?php if ($_extra) { ?> onClick="jbdump.toggle(this);"<?php } ?> onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
+                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type"><span class="jbdump-type-string">String</span>,
+                    <strong class="jbdump-string-length"><?php echo $dataLength; ?></strong></em>)
+                <strong class="jbdump-string"><?php echo $_; ?></strong>
+            </div>
+            <?php if ($_extra) { ?>
+                <div class="jbdump-nest" style="display:none;">
+                    <ul class="jbdump-node">
+                        <li class="jbdump-child">
+                            <div class="jbdump-preview"><?php echo $data; ?></div>
+                        </li>
+                    </ul>
+                </div>
+            <?php } ?>
+        </li>
     <?php
 
     }
 
     /**
      * Render HTML for array type
-     * @param   array   $data  Variable
-     * @param   string  $name  Variable name
+     * @param   array $data Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _array(array $data, $name)
@@ -1946,24 +1921,23 @@ class JBDump
         $isExpanded = $this->_isExpandedLevel();
 
         ?>
-    <li class="krumo-child">
-        <div class="krumo-element<?php echo count($data) > 0 ? ' krumo-expand' : '';?> <?=$isExpanded ? 'krumo-opened' : '';?>"
-            <?php if (count($data) > 0) { ?> onClick="krumo.toggle(this);"<?php }?> onMouseOver="krumo.over(this);"
-             onMouseOut="krumo.out(this);">
-            <a class="krumo-name"><?php echo $name;?></a>
-            (<em class="krumo-type">Array, <strong class="krumo-array-length"><?php echo count($data);?></strong></em>)
-        </div>
-        <?php if (count($data)) {
-        $this->_vars($data, $isExpanded);
-    } ?>
-    </li>
+        <li class="jbdump-child">
+            <div class="jbdump-element<?php echo count($data) > 0 ? ' jbdump-expand' : ''; ?> <?= $isExpanded ? 'jbdump-opened' : ''; ?>"
+                <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?> onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
+                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type"><span class="jbdump-type-array">Array</span>,
+                    <strong class="jbdump-array-length"><?php echo count($data); ?></strong></em>)
+            </div>
+            <?php if (count($data)) {
+                $this->_vars($data, $isExpanded);
+            } ?>
+        </li>
     <?php
     }
 
     /**
      * Render HTML for object type
-     * @param   object  $data  Variable
-     * @param   string  $name  Variable name
+     * @param   object $data Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _object($data, $name)
@@ -1972,25 +1946,22 @@ class JBDump
         $isExpanded = $this->_isExpandedLevel();
 
         ?>
-    <li class="krumo-child">
-        <div class="krumo-element<?php echo $isExpand ? ' krumo-expand' : '';?> <?=$isExpanded ? 'krumo-opened' : '';?>"
-            <?php if ($isExpand) { ?> onClick="krumo.toggle(this);"<?php }?> onMouseOver="krumo.over(this);"
-             onMouseOut="krumo.out(this);">
-            <a class="krumo-name"><?php echo $name;?></a>
-            (<em class="krumo-type">Object, <?php echo count(get_object_vars($data)); ?></em>)
-            <strong class="krumo-class"><?php echo get_class($data);?></strong>
+        <li class="jbdump-child">
+        <div class="jbdump-element<?php echo $isExpand ? ' jbdump-expand' : ''; ?> <?= $isExpanded ? 'jbdump-opened' : ''; ?>"
+            <?php if ($isExpand) { ?> onClick="jbdump.toggle(this);"<?php } ?> onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
+            <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type"><span class="jbdump-type-object">Object :: <?php echo get_class($data); ?></span>, <?php echo count(get_object_vars($data)); ?>
+            </em>)
         </div>
         <?php if ($isExpand) {
         $this->_vars($data, $isExpanded);
     } ?>
-    </li>
     <?php
     }
 
     /**
      * Render HTML for closure type
-     * @param   object  $data  Variable
-     * @param   string  $name  Variable name
+     * @param   object $data Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _closure($data, $name)
@@ -1998,16 +1969,15 @@ class JBDump
         $isExpanded = $this->_isExpandedLevel();
 
         ?>
-    <li class="krumo-child">
-        <div class="krumo-element<?php echo count($data) > 0 ? ' krumo-expand' : '';?> <?=$isExpanded ? 'krumo-opened' : '';?>"
-            <?php if (count($data) > 0) { ?> onClick="krumo.toggle(this);"<?php }?>
-             onMouseOver="krumo.over(this);" onMouseOut="krumo.out(this);">
-            <a class="krumo-name"><?php echo $name;?></a>
-            (<em class="krumo-type">Closure</em>)
-            <strong class="krumo-class"><?php echo get_class($data);?></strong>
-        </div>
-        <?php $this->_vars($this->_getFunction($data), $isExpanded); ?>
-    </li>
+        <li class="jbdump-child">
+            <div class="jbdump-element<?php echo count($data) > 0 ? ' jbdump-expand' : ''; ?> <?= $isExpanded ? 'jbdump-opened' : ''; ?>"
+                <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>
+                 onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
+                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type">Closure</em>)
+                <strong class="jbdump-class"><?php echo get_class($data); ?></strong>
+            </div>
+            <?php $this->_vars($this->_getFunction($data), $isExpanded); ?>
+        </li>
     <?php
     }
 
@@ -2025,8 +1995,8 @@ class JBDump
 
     /**
      * Render HTML for undefined variable
-     * @param   mixed   $var   Variable
-     * @param   string  $name  Variable name
+     * @param   mixed $var Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _undefined($var, $name)
@@ -2036,27 +2006,26 @@ class JBDump
 
     /**
      * Render HTML for undefined variable
-     * @param   string  $type   Variable type
-     * @param   mixed   $data   Variable
-     * @param   string  $name   Variable name
+     * @param   string $type Variable type
+     * @param   mixed $data Variable
+     * @param   string $name Variable name
      * @return  void
      */
     protected function _renderNode($type, $name, $data)
     {
+        $typeAlias = str_replace(' ', '-', strtolower($type));
         ?>
-    <li class="krumo-child">
-        <div class="krumo-element" onMouseOver="krumo.over(this);" onMouseOut="krumo.out(this);">
-            <a class="krumo-name"><?php echo $name;?></a>
-            (<em class="krumo-type"><?php echo $type;?></em>)
-            <strong class="krumo-<?php echo strtolower($type);?>"><?php echo $data;?></strong>
-        </div>
-    </li>
+        <li class="jbdump-child">
+            <div class="jbdump-element" onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
+                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type jbdump-type-<?php echo $typeAlias; ?>"><?php echo $type; ?></em>)
+                <strong class="jbdump-<?php echo $typeAlias; ?>"><?php echo $data; ?></strong>
+            </div>
+        </li>
     <?php
     }
 
     /**
      * Get the IP number of differnt ways
-     * @static
      * @param bool $getSource
      * @return string
      */
@@ -2066,20 +2035,20 @@ class JBDump
             $ip     = $_SERVER['HTTP_CLIENT_IP'];
             $source = 'HTTP_CLIENT_IP';
 
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ip     = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            $source = 'HTTP_X_FORWARDED_FOR';
-
         } elseif (!empty($_SERVER['HTTP_X_REAL_IP'])) {
             $ip     = $_SERVER['HTTP_X_REAL_IP'];
             $source = 'HTTP_X_REAL_IP';
+
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip     = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            $source = 'HTTP_X_FORWARDED_FOR';
 
         } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
             $ip     = $_SERVER['REMOTE_ADDR'];
             $source = 'REMOTE_ADDR';
 
         } else {
-            $ip     = 'undefined';
+            $ip     = '0.0.0.0';
             $source = 'undefined';
         }
 
@@ -2092,14 +2061,14 @@ class JBDump
 
     /**
      * Get relative path from absolute
-     * @param   string  $path   Absolute filepath
+     * @param   string $path Absolute filepath
      * @return  string
      */
     protected function _getRalativePath($path)
     {
         if ($path) {
             $rootPath = str_replace(array('/', '\\'), '/', self::$_config['root']);
-        
+
             $path = str_replace(array('/', '\\'), '/', $path);
             $path = str_replace($rootPath, '/', $path);
             $path = str_replace('//', '/', $path);
@@ -2110,8 +2079,8 @@ class JBDump
 
     /**
      * Get formated one trace info
-     * @param   array   $info      One trace element
-     * @param   bool    $addObject OPTIONAL Add object to result (low perfomance)
+     * @param   array $info One trace element
+     * @param   bool $addObject Add object to result (low perfomance)
      * @return  array
      */
     protected function _getOneTrace($info, $addObject = false)
@@ -2126,17 +2095,17 @@ class JBDump
         }
 
         if ($info['function'] != 'include' && $info['function'] != 'include_once' && $info['function'] != 'require'
-                && $info['function'] != 'require_once'
+            && $info['function'] != 'require_once'
         ) {
             if (isset($info['type']) && isset($info['class'])) {
 
                 $_tmp['func'] = $info['class']
-                        . ' ' . $info['type']
-                        . ' ' . $info['function']
-                        . '(' . @count($info['args']) . ')';
+                    . ' ' . $info['type']
+                    . ' ' . $info['function']
+                    . '(' . @count($info['args']) . ')';
             } else {
                 $_tmp['func'] = $info['function']
-                        . '(' . @count($info['args']) . ')';
+                    . '(' . @count($info['args']) . ')';
             }
 
             $args = isset($info['args']) ? $info['args'] : array();
@@ -2160,7 +2129,7 @@ class JBDump
 
     /**
      * Convert filesize to formated string
-     * @param   integer $bytes  Count bytes
+     * @param   integer $bytes Count bytes
      * @return  string
      */
     protected static function _formatSize($bytes)
@@ -2190,54 +2159,61 @@ class JBDump
 
             echo '
             <script type="text/javascript">
-                function krumo(){}
-                krumo.reclass=function(el,className){if(el.className.indexOf(className)<0)el.className+=" "+className};
-                krumo.unclass=function(el,className){if(el.className.indexOf(className)>-1)el.className=el.className.replace(className,"")};
-                krumo.toggle=function(el){var ul=el.parentNode.getElementsByTagName("ul");for(var i=0;i<ul.length;i++)if(ul[i].parentNode.parentNode==el.parentNode)ul[i].parentNode.style.display=ul[i].parentNode.style.display=="none"?"block":"none";if(ul[0].parentNode.style.display=="block")krumo.reclass(el,"krumo-opened");else krumo.unclass(el,"krumo-opened")};
-                krumo.over=function(el){krumo.reclass(el,"krumo-hover")};
-                krumo.out=function(el){krumo.unclass(el,"krumo-hover")};
+                function jbdump(){}
+                jbdump.reclass=function(el,className){if(el.className.indexOf(className)<0)el.className+=" "+className};
+                jbdump.unclass=function(el,className){if(el.className.indexOf(className)>-1)el.className=el.className.replace(className,"")};
+                jbdump.toggle=function(el){var ul=el.parentNode.getElementsByTagName("ul");for(var i=0;i<ul.length;i++)if(ul[i].parentNode.parentNode==el.parentNode)ul[i].parentNode.style.display=ul[i].parentNode.style.display=="none"?"block":"none";if(ul[0].parentNode.style.display=="block")jbdump.reclass(el,"jbdump-opened");else jbdump.unclass(el,"jbdump-opened")};
+                jbdump.over=function(el){jbdump.reclass(el,"jbdump-hover")};
+                jbdump.out=function(el){jbdump.unclass(el,"jbdump-hover")};
             </script>';
 
             echo '
             <style type="text/css">
-                ul.krumo-node{background-color:#fff!important;color:#333!important;list-style:none;text-align:left!important;margin:0!important;padding:0;}
-                ul.krumo-node ul.krumo-node{margin-left:15px!important;}
-                ul.krumo-node pre, ul.krumo-node textarea{font-size:92%;font-family:Courier,Monaco,"Lucida Console";width:100%;background:inherit!important;color:#000;border:none;margin:0;padding:0;}
-                ul.krumo-node textarea{height: 80%;min-height: 250px;text-align:left!important;}
-                ul.krumo-node ul{margin-left:20px;}
-                ul.krumo-node li{list-style:none;line-height:12px!important;margin:0 0 0 5px!important;min-height:12px!important;height:auto!important;}
-				div.krumo-root{border:solid 1px #000;position:relative;z-index:10101;min-width:400px;margin:5px 0 20px;clear: both;}
-                ul.krumo-first{font:normal 10px tahoma, verdana;border:solid 1px #FFF;}
-				div.krumo-root *{opacity:1!important;font-size:12px!important;}
-                li.krumo-child{display:block;list-style:none;overflow:hidden;margin:0;padding:0;}
-                div.krumo-element{cursor:default;display:block;clear:both;white-space:nowrap;background-color:#FFF;background-image:url(data:;base64,R0lGODlhCQAJALMAAP////8AAICAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQSEAAhq6VWUpx3n+AVVl42ilkEADs=);background-repeat:no-repeat;background-position:6px 5px;padding:2px 0 3px 20px;}
-                div.krumo-expand{background-image:url(data:;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQTEIAna33USpwt79vncRpZgpcGRAA7);cursor:pointer;}
-                div.krumo-hover{background-color:#BFDFFF;}
-                div.krumo-opened{background-image:url(data:;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQQEMhJ63w4Z6C37JUXWmQJRAA7);}
-                a.krumo-name{color:#a00;font:14px courier new;line-height:12px;text-decoration:none;}
-                a.krumo-name big{font:bold 14px Georgia;line-height:10px;position:relative;top:2px;left:-2px;}
-                em.krumo-type{font-style:normal;margin:0 2px;}
-                div.krumo-preview{font:normal 13px courier new;background:#F9F9B5;border:solid 1px olive;overflow:auto;margin:5px 1em 1em 0;padding:5px;}
-                li.krumo-footnote{background:#FFF url(data:;base64,R0lGODlhCgACALMAAP///8DAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAKAAIAAAQIEMhJA7D4gggAOw==) repeat-x;list-style:none;cursor:default;padding:4px 5px 3px;}
-                li.krumo-footnote h6{font:bold 10px verdana;color:navy;display:inline;margin:0;padding:0;}
-                li.krumo-footnote a{font:bold 10px arial;color:#434343;text-decoration:none;}
-                li.krumo-footnote a:hover{color:#000;}
-                li.krumo-footnote span.krumo-call{font-size:11px;font-family:Courier,Monaco,"Lucida Console";position:relative;top:1px;}
-                li.krumo-footnote span.krumo-call code{font-weight:700;}
-                div.krumo-title{font:normal 11px Tahoma, Verdana;position:relative;top:9px;cursor:default;line-height:2px;}
-                strong.krumo-array-length,strong.krumo-string-length{font-weight:400;color:#009;}
-                .krumo-footnote .copyrights a{color:#ccc;font-size:8px;}
-                div.krumo-version,.krumo-footnote .copyrights{float:right;}
-                pre.krumo {text-align:left!important;}
+                ul.jbdump-node{background-color:#fff!important;color:#333!important;list-style:none;text-align:left!important;margin:0!important;padding:0;}
+                ul.jbdump-node ul.jbdump-node{margin-left:15px!important;}
+                ul.jbdump-node pre, ul.jbdump-node textarea{font-size:92%;font-family:Courier,Monaco,"Lucida Console";width:100%;background:inherit!important;color:#000;border:none;margin:0;padding:0;}
+                ul.jbdump-node textarea{height:30%;min-height:40px;text-align:left!important; resize:vertical;}
+                ul.jbdump-node ul{margin-left:20px;}
+                ul.jbdump-node li{list-style:none;line-height:12px!important;margin:0 0 0 5px!important;min-height:12px!important;height:auto!important;padding:0!important;}
+                div.jbdump-root{border:solid 1px #000;position:relative;z-index:10101;min-width:400px;margin:5px 0 20px;clear: both;}
+                ul.jbdump-first{font:normal 10px tahoma, verdana;border:solid 1px #FFF;}
+                div.jbdump-root *{opacity:1!important;font-size:12px!important;}
+                li.jbdump-child{display:block;list-style:none;overflow:hidden;margin:0;padding:0;}
+                div.jbdump-element{cursor:default;display:block;clear:both;white-space:nowrap;background-color:#FFF;background-image:url(data:;base64,R0lGODlhCQAJALMAAP////8AAICAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQSEAAhq6VWUpx3n+AVVl42ilkEADs=);background-repeat:no-repeat;background-position:6px 5px;padding:2px 0 3px 20px;}
+                div.jbdump-expand{background-image:url(data:;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQTEIAna33USpwt79vncRpZgpcGRAA7);cursor:pointer;}
+                div.jbdump-hover{background-color:#BFDFFF;}
+                div.jbdump-opened{background-image:url(data:;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQQEMhJ63w4Z6C37JUXWmQJRAA7);}
+                a.jbdump-name{color:#a00;font:14px courier new;line-height:12px;text-decoration:none;}
+                a.jbdump-name big{font:bold 14px Georgia;line-height:10px;position:relative;top:2px;left:-2px;}
+                em.jbdump-type{font-style:normal;margin:0 2px;}
+                .jbdump-type-integer, .jbdump-type-float {color:#00e;}
+                .jbdump-type-boolean {color:#e00;}
+                .jbdump-type-string {color:#090;}
+                .jbdump-type-array {color:#e0e;}
+                .jbdump-type-null {color:#aaa; font-weight:bold;}
+                .jbdump-type-max-depth {color:#f00; font-weight:bold;}
+                div.jbdump-preview{font:normal 13px courier new;background:#F9F9B5;border:solid 1px olive;overflow:auto;margin:5px 1em 1em 0;padding:5px;}
+                li.jbdump-footnote{background:#FFF url(data:;base64,R0lGODlhCgACALMAAP///8DAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAKAAIAAAQIEMhJA7D4gggAOw==) repeat-x;list-style:none;cursor:default;padding:4px 5px 3px;}
+                li.jbdump-footnote h6{font:bold 10px verdana;color:navy;display:inline;margin:0;padding:0;}
+                li.jbdump-footnote a{font:bold 10px arial;color:#434343;text-decoration:none;}
+                li.jbdump-footnote a:hover{color:#000;}
+                li.jbdump-footnote span.jbdump-call{font-size:11px;font-family:Courier,Monaco,"Lucida Console";position:relative;top:1px;}
+                li.jbdump-footnote span.jbdump-call code{font-weight:700;}
+                div.jbdump-title{font:normal 11px Tahoma, Verdana;position:relative;top:9px;cursor:default;line-height:2px;}
+                strong.jbdump-array-length,strong.jbdump-string-length{font-weight:400;color:#009;}
+                .jbdump-footnote .copyrights a{color:#ccc;font-size:8px;}
+                div.jbdump-version,.jbdump-footnote .copyrights{float:right;}
+                pre.jbdump {text-align:left!important;}
                 #jbdump_profile_chart_table td img {height: 12px!important;}
                 #jbdump_profile_chart_table {color:#333!important;}
+                .google-visualization-table-table td img {height: 12px!important;}
             </style>';
         }
     }
 
     /**
-     * Get last funtcion name and it params from backtarce
-     * @param   array  $trace  Backtrace
+     * Get last function name and it params from backtrace
+     * @param   array $trace Backtrace
      * @return  string
      */
     protected function _getSourceFunction($trace)
@@ -2265,8 +2241,8 @@ class JBDump
 
     /**
      * Get last source path from backtrace
-     * @param   array  $trace    Backtrace
-     * @param   bool   $fileOnly Show filename only
+     * @param   array $trace Backtrace
+     * @param   bool $fileOnly Show filename only
      * @return  string
      */
     protected function _getSourcePath($trace, $fileOnly = false)
@@ -2295,7 +2271,7 @@ class JBDump
 
     /**
      * Get Last trace info
-     * @param   array   $trace Backtrace
+     * @param   array $trace Backtrace
      * @return  array
      */
     protected function _getLastTrace($trace)
@@ -2309,20 +2285,20 @@ class JBDump
         for ($i = 0; $trace && $i < sizeof($trace); $i++) {
             $j = $i;
             if (isset($trace[$i]['class'])
-                    && isset($trace[$i]['file'])
-                    && ($trace[$i]['class'] == 'JBDump')
-                    && (substr($trace[$i]['file'], -$curFileLength, $curFileLength) == $curFile)
+                && isset($trace[$i]['file'])
+                && ($trace[$i]['class'] == 'JBDump')
+                && (substr($trace[$i]['file'], -$curFileLength, $curFileLength) == $curFile)
             ) {
 
             } elseif (isset($trace[$i]['class'])
-                    && isset($trace[$i + 1]['file'])
-                    && isset($trace[$i]['file'])
-                    && $trace[$i]['class'] == 'JBDump'
-                    && (substr($trace[$i]['file'], -$curFileLength, $curFileLength) == $curFile)
+                && isset($trace[$i + 1]['file'])
+                && isset($trace[$i]['file'])
+                && $trace[$i]['class'] == 'JBDump'
+                && (substr($trace[$i]['file'], -$curFileLength, $curFileLength) == $curFile)
             ) {
 
             } elseif (isset($trace[$i]['file'])
-                    && (substr($trace[$i]['file'], -$curFileLength, $curFileLength) == $curFile)
+                && (substr($trace[$i]['file'], -$curFileLength, $curFileLength) == $curFile)
             ) {
 
             } else {
@@ -2347,7 +2323,7 @@ class JBDump
 
     /**
      * Get object methods
-     * @param   object  $object    Backtrace
+     * @param   object $object Backtrace
      * @return  array
      */
     protected function _getMethods($object)
@@ -2367,7 +2343,7 @@ class JBDump
 
     /**
      * Get all info about class (object)
-     * @param   string|object  $data    Object or class name
+     * @param   string|object $data Object or class name
      * @return  JBDump
      */
     protected static function _getClass($data)
@@ -2453,10 +2429,10 @@ class JBDump
 
                 $propertyName = $property->getName();
 
-                $result['properties'][$visible][$property->name]['comment'] = $property->getDocComment();
-                $result['properties'][$visible][$property->name]['static']  = $property->isStatic();
-                $result['properties'][$visible][$property->name]['default'] = $property->isDefault();
-                $result['properties'][$visible][$property->name]['class']   = $property->class;
+                $result['properties'][$visible][$propertyName]['comment'] = $property->getDocComment();
+                $result['properties'][$visible][$propertyName]['static']  = $property->isStatic();
+                $result['properties'][$visible][$propertyName]['default'] = $property->isDefault();
+                $result['properties'][$visible][$propertyName]['class']   = $property->class;
             }
         }
 
@@ -2566,8 +2542,9 @@ class JBDump
 
         $result = array();
         foreach ($params as $param) {
-            $optional                   = $param->isOptional();
-            $paramName                  = (!$optional ? '*' : '') . $param->name;
+            $optional  = $param->isOptional();
+            $paramName = (!$optional ? '*' : '') . $param->name;
+
             $result[$paramName]['name'] = $param->getName();
             if ($optional && !$isInternal) {
                 $result[$paramName]['default'] = $param->getDefaultValue();
@@ -2588,7 +2565,6 @@ class JBDump
 
     /**
      * Get all info about function
-     * @static
      * @param   string|function $functionName Function or function name
      * @return  array|bool
      */
@@ -2609,7 +2585,7 @@ class JBDump
         $result         = array();
         $result['name'] = $func->getName();
         $result['type'] = $func->isInternal() ? 'internal' : 'user-defined';
-        
+
         if (method_exists($func, 'getNamespaceName') && $namespace = $func->getNamespaceName()) {
             $result['namespace'] = $namespace;
         }
@@ -2653,8 +2629,7 @@ class JBDump
 
     /**
      * Get all info about function
-     * @static
-     * @param string|function  $extensionName    Function or function name
+     * @param string|function $extensionName Function or function name
      * @return array|bool
      */
     protected static function _getExtension($extensionName)
@@ -2698,7 +2673,7 @@ class JBDump
 
     /**
      * Get all file info
-     * @param   string  $path
+     * @param   string $path
      * @return  array|bool
      */
     protected static function _pathInfo($path)
@@ -2776,9 +2751,9 @@ class JBDump
     }
 
     /**
-     * Convert trace infomation to readable
-     * @param array $trace Standart debug backtrace data
-     * @param bool  $addObject
+     * Convert trace information to readable
+     * @param array $trace Standard debug backtrace data
+     * @param bool $addObject
      * @return array
      */
     public function convertTrace($trace, $addObject = false)
@@ -2787,7 +2762,6 @@ class JBDump
         foreach ($trace as $key => $info) {
             $oneTrace = self::i()->_getOneTrace($info, $addObject);
 
-            //$result['#' . ($key - 1) . ' ' . $oneTrace['func']] = $oneTrace;
             $result['#' . ($key - 1) . ' ' . $oneTrace['func']] = $oneTrace['file'];
         }
 
@@ -2829,10 +2803,10 @@ class JBDump
     /**
      * Error handler for PHP errors
      * @param   integer $errNo
-     * @param   string  $errMsg
-     * @param   string  $errFile
+     * @param   string $errMsg
+     * @param   string $errFile
      * @param   integer $errLine
-     * @param   array   $errCont
+     * @param   array $errCont
      * @return  bool
      */
     function _errorHandler($errNo, $errMsg, $errFile, $errLine, $errCont)
@@ -2850,8 +2824,8 @@ class JBDump
             if (self::$_config['errors']['logHidden']) {
                 $errorMessage = date(self::DATE_FORMAT, time()) . ' ' . $errorMessage . "\n";
 
-                $logPath      = self::$_config['log']['path']
-                                . '/' . self::$_config['log']['file'] . '_error_' . date('Y.m.d') . '.log';
+                $logPath = self::$_config['log']['path']
+                    . '/' . self::$_config['log']['file'] . '_error_' . date('Y.m.d') . '.log';
 
                 error_log($errorMessage, 3, $logPath);
             }
@@ -2894,7 +2868,7 @@ class JBDump
 
     /**
      * Exception handler
-     * @param   Exception   $exception PHP exception object
+     * @param   Exception $exception PHP exception object
      * @return  boolean
      */
     function _exceptionHandler($exception)
@@ -2953,14 +2927,13 @@ class JBDump
 
     /**
      * Check is current HTTP request is ajax
-     * @static
      * @return  bool
      */
     public static function isAjax()
     {
 
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])
-                && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest'
+            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest'
         ) {
             return true;
 
@@ -2988,8 +2961,7 @@ class JBDump
 
     /**
      * Send message mail
-     * @static
-     * @param mixed  $text
+     * @param mixed $text
      * @param string $subject
      * @param string $to
      * @return bool
@@ -3008,8 +2980,8 @@ class JBDump
 
         if (empty($to)) {
             $to = isset(self::$_config['mail']['to'])
-                    ? self::$_config['mail']['to']
-                    : 'jbdump@' . $_SERVER['HTTP_HOST'];
+                ? self::$_config['mail']['to']
+                : 'jbdump@' . $_SERVER['HTTP_HOST'];
         }
 
         if (is_array($to)) {
@@ -3020,8 +2992,8 @@ class JBDump
         $message   = array();
         $message[] = '<html><body>';
         $message[] = '<p><b>JBDump mail from '
-                . '<a href="http://' . $_SERVER['HTTP_HOST'] . '">' . $_SERVER['HTTP_HOST'] . '</a>'
-                . '</b></p>';
+            . '<a href="http://' . $_SERVER['HTTP_HOST'] . '">' . $_SERVER['HTTP_HOST'] . '</a>'
+            . '</b></p>';
 
         $message[] = '<p><b>Date</b>: ' . date(DATE_RFC822, time()) . '</p>';
         $message[] = '<p><b>IP</b>: ' . self::getClientIP() . '</p>';
@@ -3057,7 +3029,6 @@ class JBDump
 
     /**
      * Get arguments for current function/method
-     * @static
      * @return bool
      */
     public static function args()
@@ -3094,7 +3065,7 @@ class JBDump
             if (isset($funcInfo['parameters'])) {
                 $result = array();
                 $i      = 0;
-                foreach ($funcInfo['parameters'] as $argName=> $argInfo) {
+                foreach ($funcInfo['parameters'] as $argName => $argInfo) {
 
                     if (isset($currentTrace['args'][$i])) {
                         $result[$argName] = $currentTrace['args'][$i];
@@ -3121,26 +3092,25 @@ class JBDump
 
     /**
      * Highlight SQL query
-     * @static
      * @param        $query
      * @param string $sqlName
-     * @param bool   $nl2br
+     * @param bool $nl2br
      * @return JBDump
      */
     public static function sql($query, $sqlName = 'SQL Query', $nl2br = false)
     {
+        // Joomla hack
         if (defined('_JEXEC')) {
             $config = new JConfig();
             $prefix = $config->dbprefix;
-            $query = str_replace('#__', $prefix, $query);
-        }        
-        
-        if (class_exists('SqlFormatter')) {
-            $sqlHtml = SqlFormatter::format($query);
-            
+            $query  = str_replace('#__', $prefix, $query);
+        }
+
+        if (class_exists('JBDump_SqlFormatter')) {
+            $sqlHtml = JBDump_SqlFormatter::format($query);
             return self::i()->dump($sqlHtml, $sqlName . '::html');
         }
-    
+
         $tmp = htmlspecialchars((string)$query);
         $tmp = str_replace("\r", '', $tmp);
         $tmp = trim(str_replace("\n", "\r\n", $tmp)) . "\r\n";
@@ -3271,14 +3241,14 @@ class JBDump
 
         if (count($quote_list_text)) {
             $quote_list_text = array_reverse($quote_list_text, true);
-            foreach ($quote_list_text as $k=> $i) {
+            foreach ($quote_list_text as $k => $i) {
                 $tmp = str_replace('<text' . $k . '>', '<span style="color:#777;">' . $i . '</span>', $tmp);
             }
         }
 
         if (count($quote_list_symbols)) {
             $quote_list_symbols = array_reverse($quote_list_symbols, true);
-            foreach ($quote_list_symbols as $k=> $i) {
+            foreach ($quote_list_symbols as $k => $i) {
                 $tmp = str_replace('<symbol' . $k . '>', $i, $tmp);
             }
         }
@@ -3293,8 +3263,8 @@ class JBDump
 
     /**
      * Do the real json encoding adding human readability. Supports automatic indenting with tabs
-     * @param array|object $in     The array or object to encode in json
-     * @param int          $indent The indentation level. Adds $indent tabs to the string
+     * @param array|object $in The array or object to encode in json
+     * @param int $indent The indentation level. Adds $indent tabs to the string
      * @return string
      */
     protected function _jsonEncode($in, $indent = 0)
@@ -3328,13 +3298,1094 @@ class JBDump
 }
 
 /**
+ * SQL Formatter is a collection of utilities for debugging SQL queries.
+ * It includes methods for formatting, syntax highlighting, removing comments, etc.
+ *
+ * @package    SqlFormatter
+ * @author     Jeremy Dorn <jeremy@jeremydorn.com>
+ * @author     Florin Patan <florinpatan@gmail.com>
+ * @copyright  2013 Jeremy Dorn
+ * @license    http://opensource.org/licenses/MIT
+ * @link       http://github.com/jdorn/sql-formatter
+ * @version    1.2.18
+ */
+class JBDump_SqlFormatter
+{
+    // Constants for token types
+    const TOKEN_TYPE_WHITESPACE        = 0;
+    const TOKEN_TYPE_WORD              = 1;
+    const TOKEN_TYPE_QUOTE             = 2;
+    const TOKEN_TYPE_BACKTICK_QUOTE    = 3;
+    const TOKEN_TYPE_RESERVED          = 4;
+    const TOKEN_TYPE_RESERVED_TOPLEVEL = 5;
+    const TOKEN_TYPE_RESERVED_NEWLINE  = 6;
+    const TOKEN_TYPE_BOUNDARY          = 7;
+    const TOKEN_TYPE_COMMENT           = 8;
+    const TOKEN_TYPE_BLOCK_COMMENT     = 9;
+    const TOKEN_TYPE_NUMBER            = 10;
+    const TOKEN_TYPE_ERROR             = 11;
+    const TOKEN_TYPE_VARIABLE          = 12;
+
+    // Constants for different components of a token
+    const TOKEN_TYPE  = 0;
+    const TOKEN_VALUE = 1;
+
+    // Reserved words (for syntax highlighting)
+    protected static $reserved = array(
+        'ACCESSIBLE', 'ACTION', 'AGAINST', 'AGGREGATE', 'ALGORITHM', 'ALL', 'ALTER', 'ANALYSE', 'ANALYZE', 'AS', 'ASC',
+        'AUTOCOMMIT', 'AUTO_INCREMENT', 'BACKUP', 'BEGIN', 'BETWEEN', 'BINLOG', 'BOTH', 'CASCADE', 'CASE', 'CHANGE', 'CHANGED', 'CHARACTER SET',
+        'CHARSET', 'CHECK', 'CHECKSUM', 'COLLATE', 'COLLATION', 'COLUMN', 'COLUMNS', 'COMMENT', 'COMMIT', 'COMMITTED', 'COMPRESSED', 'CONCURRENT',
+        'CONSTRAINT', 'CONTAINS', 'CONVERT', 'CREATE', 'CROSS', 'CURRENT_TIMESTAMP', 'DATABASE', 'DATABASES', 'DAY', 'DAY_HOUR', 'DAY_MINUTE',
+        'DAY_SECOND', 'DEFAULT', 'DEFINER', 'DELAYED', 'DELETE', 'DESC', 'DESCRIBE', 'DETERMINISTIC', 'DISTINCT', 'DISTINCTROW', 'DIV',
+        'DO', 'DUMPFILE', 'DUPLICATE', 'DYNAMIC', 'ELSE', 'ENCLOSED', 'END', 'ENGINE', 'ENGINE_TYPE', 'ENGINES', 'ESCAPE', 'ESCAPED', 'EVENTS', 'EXEC',
+        'EXECUTE', 'EXISTS', 'EXPLAIN', 'EXTENDED', 'FAST', 'FIELDS', 'FILE', 'FIRST', 'FIXED', 'FLUSH', 'FOR', 'FORCE', 'FOREIGN', 'FULL', 'FULLTEXT',
+        'FUNCTION', 'GLOBAL', 'GRANT', 'GRANTS', 'GROUP_CONCAT', 'HEAP', 'HIGH_PRIORITY', 'HOSTS', 'HOUR', 'HOUR_MINUTE',
+        'HOUR_SECOND', 'IDENTIFIED', 'IF', 'IFNULL', 'IGNORE', 'IN', 'INDEX', 'INDEXES', 'INFILE', 'INSERT', 'INSERT_ID', 'INSERT_METHOD', 'INTERVAL',
+        'INTO', 'INVOKER', 'IS', 'ISOLATION', 'KEY', 'KEYS', 'KILL', 'LAST_INSERT_ID', 'LEADING', 'LEVEL', 'LIKE', 'LINEAR',
+        'LINES', 'LOAD', 'LOCAL', 'LOCK', 'LOCKS', 'LOGS', 'LOW_PRIORITY', 'MARIA', 'MASTER', 'MASTER_CONNECT_RETRY', 'MASTER_HOST', 'MASTER_LOG_FILE',
+        'MATCH', 'MAX_CONNECTIONS_PER_HOUR', 'MAX_QUERIES_PER_HOUR', 'MAX_ROWS', 'MAX_UPDATES_PER_HOUR', 'MAX_USER_CONNECTIONS',
+        'MEDIUM', 'MERGE', 'MINUTE', 'MINUTE_SECOND', 'MIN_ROWS', 'MODE', 'MODIFY',
+        'MONTH', 'MRG_MYISAM', 'MYISAM', 'NAMES', 'NATURAL', 'NOT', 'NOW()', 'NULL', 'OFFSET', 'ON', 'OPEN', 'OPTIMIZE', 'OPTION', 'OPTIONALLY',
+        'ON UPDATE', 'ON DELETE', 'OUTFILE', 'PACK_KEYS', 'PAGE', 'PARTIAL', 'PARTITION', 'PARTITIONS', 'PASSWORD', 'PRIMARY', 'PRIVILEGES', 'PROCEDURE',
+        'PROCESS', 'PROCESSLIST', 'PURGE', 'QUICK', 'RANGE', 'RAID0', 'RAID_CHUNKS', 'RAID_CHUNKSIZE', 'RAID_TYPE', 'READ', 'READ_ONLY',
+        'READ_WRITE', 'REFERENCES', 'REGEXP', 'RELOAD', 'RENAME', 'REPAIR', 'REPEATABLE', 'REPLACE', 'REPLICATION', 'RESET', 'RESTORE', 'RESTRICT',
+        'RETURN', 'RETURNS', 'REVOKE', 'RLIKE', 'ROLLBACK', 'ROW', 'ROWS', 'ROW_FORMAT', 'SECOND', 'SECURITY', 'SEPARATOR',
+        'SERIALIZABLE', 'SESSION', 'SHARE', 'SHOW', 'SHUTDOWN', 'SLAVE', 'SONAME', 'SOUNDS', 'SQL', 'SQL_AUTO_IS_NULL', 'SQL_BIG_RESULT',
+        'SQL_BIG_SELECTS', 'SQL_BIG_TABLES', 'SQL_BUFFER_RESULT', 'SQL_CALC_FOUND_ROWS', 'SQL_LOG_BIN', 'SQL_LOG_OFF', 'SQL_LOG_UPDATE',
+        'SQL_LOW_PRIORITY_UPDATES', 'SQL_MAX_JOIN_SIZE', 'SQL_QUOTE_SHOW_CREATE', 'SQL_SAFE_UPDATES', 'SQL_SELECT_LIMIT', 'SQL_SLAVE_SKIP_COUNTER',
+        'SQL_SMALL_RESULT', 'SQL_WARNINGS', 'SQL_CACHE', 'SQL_NO_CACHE', 'START', 'STARTING', 'STATUS', 'STOP', 'STORAGE',
+        'STRAIGHT_JOIN', 'STRING', 'STRIPED', 'SUPER', 'TABLE', 'TABLES', 'TEMPORARY', 'TERMINATED', 'THEN', 'TO', 'TRAILING', 'TRANSACTIONAL', 'TRUE',
+        'TRUNCATE', 'TYPE', 'TYPES', 'UNCOMMITTED', 'UNIQUE', 'UNLOCK', 'UNSIGNED', 'USAGE', 'USE', 'USING', 'VARIABLES',
+        'VIEW', 'WHEN', 'WITH', 'WORK', 'WRITE', 'YEAR_MONTH'
+    );
+
+    // For SQL formatting
+    // These keywords will all be on their own line
+    protected static $reserved_toplevel = array(
+        'SELECT', 'FROM', 'WHERE', 'SET', 'ORDER BY', 'GROUP BY', 'LIMIT', 'DROP',
+        'VALUES', 'UPDATE', 'HAVING', 'ADD', 'AFTER', 'ALTER TABLE', 'DELETE FROM', 'UNION ALL', 'UNION', 'EXCEPT', 'INTERSECT'
+    );
+
+    protected static $reserved_newline = array(
+        'LEFT OUTER JOIN', 'RIGHT OUTER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'OUTER JOIN', 'INNER JOIN', 'JOIN', 'XOR', 'OR', 'AND'
+    );
+
+    protected static $functions = array(
+        'ABS', 'ACOS', 'ADDDATE', 'ADDTIME', 'AES_DECRYPT', 'AES_ENCRYPT', 'AREA', 'ASBINARY', 'ASCII', 'ASIN', 'ASTEXT', 'ATAN', 'ATAN2',
+        'AVG', 'BDMPOLYFROMTEXT', 'BDMPOLYFROMWKB', 'BDPOLYFROMTEXT', 'BDPOLYFROMWKB', 'BENCHMARK', 'BIN', 'BIT_AND', 'BIT_COUNT', 'BIT_LENGTH',
+        'BIT_OR', 'BIT_XOR', 'BOUNDARY', 'BUFFER', 'CAST', 'CEIL', 'CEILING', 'CENTROID', 'CHAR', 'CHARACTER_LENGTH', 'CHARSET', 'CHAR_LENGTH',
+        'COALESCE', 'COERCIBILITY', 'COLLATION', 'COMPRESS', 'CONCAT', 'CONCAT_WS', 'CONNECTION_ID', 'CONTAINS', 'CONV', 'CONVERT', 'CONVERT_TZ',
+        'CONVEXHULL', 'COS', 'COT', 'COUNT', 'CRC32', 'CROSSES', 'CURDATE', 'CURRENT_DATE', 'CURRENT_TIME', 'CURRENT_TIMESTAMP', 'CURRENT_USER',
+        'CURTIME', 'DATABASE', 'DATE', 'DATEDIFF', 'DATE_ADD', 'DATE_DIFF', 'DATE_FORMAT', 'DATE_SUB', 'DAY', 'DAYNAME', 'DAYOFMONTH', 'DAYOFWEEK',
+        'DAYOFYEAR', 'DECODE', 'DEFAULT', 'DEGREES', 'DES_DECRYPT', 'DES_ENCRYPT', 'DIFFERENCE', 'DIMENSION', 'DISJOINT', 'DISTANCE', 'ELT', 'ENCODE',
+        'ENCRYPT', 'ENDPOINT', 'ENVELOPE', 'EQUALS', 'EXP', 'EXPORT_SET', 'EXTERIORRING', 'EXTRACT', 'EXTRACTVALUE', 'FIELD', 'FIND_IN_SET', 'FLOOR',
+        'FORMAT', 'FOUND_ROWS', 'FROM_DAYS', 'FROM_UNIXTIME', 'GEOMCOLLFROMTEXT', 'GEOMCOLLFROMWKB', 'GEOMETRYCOLLECTION', 'GEOMETRYCOLLECTIONFROMTEXT',
+        'GEOMETRYCOLLECTIONFROMWKB', 'GEOMETRYFROMTEXT', 'GEOMETRYFROMWKB', 'GEOMETRYN', 'GEOMETRYTYPE', 'GEOMFROMTEXT', 'GEOMFROMWKB', 'GET_FORMAT',
+        'GET_LOCK', 'GLENGTH', 'GREATEST', 'GROUP_CONCAT', 'GROUP_UNIQUE_USERS', 'HEX', 'HOUR', 'IF', 'IFNULL', 'INET_ATON', 'INET_NTOA', 'INSERT', 'INSTR',
+        'INTERIORRINGN', 'INTERSECTION', 'INTERSECTS', 'INTERVAL', 'ISCLOSED', 'ISEMPTY', 'ISNULL', 'ISRING', 'ISSIMPLE', 'IS_FREE_LOCK', 'IS_USED_LOCK',
+        'LAST_DAY', 'LAST_INSERT_ID', 'LCASE', 'LEAST', 'LEFT', 'LENGTH', 'LINEFROMTEXT', 'LINEFROMWKB', 'LINESTRING', 'LINESTRINGFROMTEXT', 'LINESTRINGFROMWKB',
+        'LN', 'LOAD_FILE', 'LOCALTIME', 'LOCALTIMESTAMP', 'LOCATE', 'LOG', 'LOG10', 'LOG2', 'LOWER', 'LPAD', 'LTRIM', 'MAKEDATE', 'MAKETIME', 'MAKE_SET',
+        'MASTER_POS_WAIT', 'MAX', 'MBRCONTAINS', 'MBRDISJOINT', 'MBREQUAL', 'MBRINTERSECTS', 'MBROVERLAPS', 'MBRTOUCHES', 'MBRWITHIN', 'MD5', 'MICROSECOND',
+        'MID', 'MIN', 'MINUTE', 'MLINEFROMTEXT', 'MLINEFROMWKB', 'MOD', 'MONTH', 'MONTHNAME', 'MPOINTFROMTEXT', 'MPOINTFROMWKB', 'MPOLYFROMTEXT', 'MPOLYFROMWKB',
+        'MULTILINESTRING', 'MULTILINESTRINGFROMTEXT', 'MULTILINESTRINGFROMWKB', 'MULTIPOINT', 'MULTIPOINTFROMTEXT', 'MULTIPOINTFROMWKB', 'MULTIPOLYGON',
+        'MULTIPOLYGONFROMTEXT', 'MULTIPOLYGONFROMWKB', 'NAME_CONST', 'NULLIF', 'NUMGEOMETRIES', 'NUMINTERIORRINGS', 'NUMPOINTS', 'OCT', 'OCTET_LENGTH',
+        'OLD_PASSWORD', 'ORD', 'OVERLAPS', 'PASSWORD', 'PERIOD_ADD', 'PERIOD_DIFF', 'PI', 'POINT', 'POINTFROMTEXT', 'POINTFROMWKB', 'POINTN', 'POINTONSURFACE',
+        'POLYFROMTEXT', 'POLYFROMWKB', 'POLYGON', 'POLYGONFROMTEXT', 'POLYGONFROMWKB', 'POSITION', 'POW', 'POWER', 'QUARTER', 'QUOTE', 'RADIANS', 'RAND',
+        'RELATED', 'RELEASE_LOCK', 'REPEAT', 'REPLACE', 'REVERSE', 'RIGHT', 'ROUND', 'ROW_COUNT', 'RPAD', 'RTRIM', 'SCHEMA', 'SECOND', 'SEC_TO_TIME',
+        'SESSION_USER', 'SHA', 'SHA1', 'SIGN', 'SIN', 'SLEEP', 'SOUNDEX', 'SPACE', 'SQRT', 'SRID', 'STARTPOINT', 'STD', 'STDDEV', 'STDDEV_POP', 'STDDEV_SAMP',
+        'STRCMP', 'STR_TO_DATE', 'SUBDATE', 'SUBSTR', 'SUBSTRING', 'SUBSTRING_INDEX', 'SUBTIME', 'SUM', 'SYMDIFFERENCE', 'SYSDATE', 'SYSTEM_USER', 'TAN',
+        'TIME', 'TIMEDIFF', 'TIMESTAMP', 'TIMESTAMPADD', 'TIMESTAMPDIFF', 'TIME_FORMAT', 'TIME_TO_SEC', 'TOUCHES', 'TO_DAYS', 'TRIM', 'TRUNCATE', 'UCASE',
+        'UNCOMPRESS', 'UNCOMPRESSED_LENGTH', 'UNHEX', 'UNIQUE_USERS', 'UNIX_TIMESTAMP', 'UPDATEXML', 'UPPER', 'USER', 'UTC_DATE', 'UTC_TIME', 'UTC_TIMESTAMP',
+        'UUID', 'VARIANCE', 'VAR_POP', 'VAR_SAMP', 'VERSION', 'WEEK', 'WEEKDAY', 'WEEKOFYEAR', 'WITHIN', 'X', 'Y', 'YEAR', 'YEARWEEK'
+    );
+
+    // Punctuation that can be used as a boundary between other tokens
+    protected static $boundaries = array(',', ';', ':', ')', '(', '.', '=', '<', '>', '+', '-', '*', '/', '!', '^', '%', '|', '&', '#');
+
+    // For HTML syntax highlighting
+    // Styles applied to different token types
+    public static $quote_attributes = 'style="color:#F700DA;font-weight:bold;"';
+    public static $backtick_quote_attributes = 'style="color: purple;"';
+    public static $reserved_attributes = 'style="font-weight:bold;color:#00f;"';
+    public static $boundary_attributes = 'style="color:#000;"';
+    public static $number_attributes = 'style="color:#0a0;font-weight:bold;"';
+    public static $word_attributes = 'style="color: #333;"';
+    public static $error_attributes = 'style="background-color: red;"';
+    public static $comment_attributes = 'style="color: #aaa;"';
+    public static $variable_attributes = 'style="color: orange;"';
+    public static $pre_attributes = 'style="color: black; background-color: white;"';
+
+    // Boolean - whether or not the current environment is the CLI
+    // This affects the type of syntax highlighting
+    // If not defined, it will be determined automatically
+    public static $cli;
+
+    // For CLI syntax highlighting
+    public static $cli_quote = "\x1b[34;1m";
+    public static $cli_backtick_quote = "\x1b[35;1m";
+    public static $cli_reserved = "\x1b[37m";
+    public static $cli_boundary = "";
+    public static $cli_number = "\x1b[32;1m";
+    public static $cli_word = "";
+    public static $cli_error = "\x1b[31;1;7m";
+    public static $cli_comment = "\x1b[30;1m";
+    public static $cli_functions = "\x1b[37m";
+    public static $cli_variable = "\x1b[36;1m";
+
+    // The tab character to use when formatting SQL
+    public static $tab = '    ';
+
+    // This flag tells us if queries need to be enclosed in <pre> tags
+    public static $use_pre = true;
+
+    // This flag tells us if SqlFormatted has been initialized
+    protected static $init;
+
+    // Regular expressions for tokenizing
+    protected static $regex_boundaries;
+    protected static $regex_reserved;
+    protected static $regex_reserved_newline;
+    protected static $regex_reserved_toplevel;
+    protected static $regex_function;
+
+    // Cache variables
+    // Only tokens shorter than this size will be cached.  Somewhere between 10 and 20 seems to work well for most cases.
+    public static $max_cachekey_size = 15;
+    protected static $token_cache = array();
+    protected static $cache_hits = 0;
+    protected static $cache_misses = 0;
+
+    /**
+     * Get stats about the token cache
+     * @return Array An array containing the keys 'hits', 'misses', 'entries', and 'size' in bytes
+     */
+    public static function getCacheStats()
+    {
+        return array(
+            'hits'    => self::$cache_hits,
+            'misses'  => self::$cache_misses,
+            'entries' => count(self::$token_cache),
+            'size'    => strlen(serialize(self::$token_cache))
+        );
+    }
+
+    /**
+     * Stuff that only needs to be done once.  Builds regular expressions and sorts the reserved words.
+     */
+    protected static function init()
+    {
+        if (self::$init) {
+            return;
+        }
+
+        // Sort reserved word list from longest word to shortest, 3x faster than usort
+        $reservedMap = array_combine(self::$reserved, array_map('strlen', self::$reserved));
+        arsort($reservedMap);
+        self::$reserved = array_keys($reservedMap);
+
+        // Set up regular expressions
+        self::$regex_boundaries        = '(' . implode('|', array_map(array(__CLASS__, 'quote_regex'), self::$boundaries)) . ')';
+        self::$regex_reserved          = '(' . implode('|', array_map(array(__CLASS__, 'quote_regex'), self::$reserved)) . ')';
+        self::$regex_reserved_toplevel = str_replace(' ', '\\s+', '(' . implode('|', array_map(array(__CLASS__, 'quote_regex'), self::$reserved_toplevel)) . ')');
+        self::$regex_reserved_newline  = str_replace(' ', '\\s+', '(' . implode('|', array_map(array(__CLASS__, 'quote_regex'), self::$reserved_newline)) . ')');
+
+        self::$regex_function = '(' . implode('|', array_map(array(__CLASS__, 'quote_regex'), self::$functions)) . ')';
+
+        self::$init = true;
+    }
+
+    /**
+     * Return the next token and token type in a SQL string.
+     * Quoted strings, comments, reserved words, whitespace, and punctuation are all their own tokens.
+     *
+     * @param String $string The SQL string
+     * @param array $previous The result of the previous getNextToken() call
+     *
+     * @return Array An associative array containing the type and value of the token.
+     */
+    protected static function getNextToken($string, $previous = null)
+    {
+        // Whitespace
+        if (preg_match('/^\s+/', $string, $matches)) {
+            return array(
+                self::TOKEN_VALUE => $matches[0],
+                self::TOKEN_TYPE  => self::TOKEN_TYPE_WHITESPACE
+            );
+        }
+
+        // Comment
+        if ($string[0] === '#' || (isset($string[1]) && ($string[0] === '-' && $string[1] === '-') || ($string[0] === '/' && $string[1] === '*'))) {
+            // Comment until end of line
+            if ($string[0] === '-' || $string[0] === '#') {
+                $last = strpos($string, "\n");
+                $type = self::TOKEN_TYPE_COMMENT;
+            } else { // Comment until closing comment tag
+                $last = strpos($string, "*/", 2) + 2;
+                $type = self::TOKEN_TYPE_BLOCK_COMMENT;
+            }
+
+            if ($last === false) {
+                $last = strlen($string);
+            }
+
+            return array(
+                self::TOKEN_VALUE => substr($string, 0, $last),
+                self::TOKEN_TYPE  => $type
+            );
+        }
+
+        // Quoted String
+        if ($string[0] === '"' || $string[0] === '\'' || $string[0] === '`' || $string[0] === '[') {
+            $return = array(
+                self::TOKEN_TYPE  => (($string[0] === '`' || $string[0] === '[') ? self::TOKEN_TYPE_BACKTICK_QUOTE : self::TOKEN_TYPE_QUOTE),
+                self::TOKEN_VALUE => self::getQuotedString($string)
+            );
+
+            return $return;
+        }
+
+        // User-defined Variable
+        if ($string[0] === '@' && isset($string[1])) {
+            $ret = array(
+                self::TOKEN_VALUE => null,
+                self::TOKEN_TYPE  => self::TOKEN_TYPE_VARIABLE
+            );
+
+            // If the variable name is quoted
+            if ($string[1] === '"' || $string[1] === '\'' || $string[1] === '`') {
+                $ret[self::TOKEN_VALUE] = '@' . self::getQuotedString(substr($string, 1));
+            } // Non-quoted variable name
+            else {
+                preg_match('/^(@[a-zA-Z0-9\._\$]+)/', $string, $matches);
+                if ($matches) {
+                    $ret[self::TOKEN_VALUE] = $matches[1];
+                }
+            }
+
+            if ($ret[self::TOKEN_VALUE] !== null) {
+                return $ret;
+            }
+        }
+
+        // Number (decimal, binary, or hex)
+        if (preg_match('/^([0-9]+(\.[0-9]+)?|0x[0-9a-fA-F]+|0b[01]+)($|\s|"\'`|' . self::$regex_boundaries . ')/', $string, $matches)) {
+            return array(
+                self::TOKEN_VALUE => $matches[1],
+                self::TOKEN_TYPE  => self::TOKEN_TYPE_NUMBER
+            );
+        }
+
+        // Boundary Character (punctuation and symbols)
+        if (preg_match('/^(' . self::$regex_boundaries . ')/', $string, $matches)) {
+            return array(
+                self::TOKEN_VALUE => $matches[1],
+                self::TOKEN_TYPE  => self::TOKEN_TYPE_BOUNDARY
+            );
+        }
+
+        // A reserved word cannot be preceded by a '.'
+        // this makes it so in "mytable.from", "from" is not considered a reserved word
+        if (!$previous || !isset($previous[self::TOKEN_VALUE]) || $previous[self::TOKEN_VALUE] !== '.') {
+            $upper = strtoupper($string);
+            // Top Level Reserved Word
+            if (preg_match('/^(' . self::$regex_reserved_toplevel . ')($|\s|' . self::$regex_boundaries . ')/', $upper, $matches)) {
+                return array(
+                    self::TOKEN_TYPE  => self::TOKEN_TYPE_RESERVED_TOPLEVEL,
+                    self::TOKEN_VALUE => substr($string, 0, strlen($matches[1]))
+                );
+            }
+            // Newline Reserved Word
+            if (preg_match('/^(' . self::$regex_reserved_newline . ')($|\s|' . self::$regex_boundaries . ')/', $upper, $matches)) {
+                return array(
+                    self::TOKEN_TYPE  => self::TOKEN_TYPE_RESERVED_NEWLINE,
+                    self::TOKEN_VALUE => substr($string, 0, strlen($matches[1]))
+                );
+            }
+            // Other Reserved Word
+            if (preg_match('/^(' . self::$regex_reserved . ')($|\s|' . self::$regex_boundaries . ')/', $upper, $matches)) {
+                return array(
+                    self::TOKEN_TYPE  => self::TOKEN_TYPE_RESERVED,
+                    self::TOKEN_VALUE => substr($string, 0, strlen($matches[1]))
+                );
+            }
+        }
+
+        // A function must be suceeded by '('
+        // this makes it so "count(" is considered a function, but "count" alone is not
+        $upper = strtoupper($string);
+        // function
+        if (preg_match('/^(' . self::$regex_function . '[(]|\s|[)])/', $upper, $matches)) {
+            return array(
+                self::TOKEN_TYPE  => self::TOKEN_TYPE_RESERVED,
+                self::TOKEN_VALUE => substr($string, 0, strlen($matches[1]) - 1)
+            );
+        }
+
+        // Non reserved word
+        preg_match('/^(.*?)($|\s|["\'`]|' . self::$regex_boundaries . ')/', $string, $matches);
+
+        return array(
+            self::TOKEN_VALUE => $matches[1],
+            self::TOKEN_TYPE  => self::TOKEN_TYPE_WORD
+        );
+    }
+
+    protected static function getQuotedString($string)
+    {
+        $ret = null;
+
+        // This checks for the following patterns:
+        // 1. backtick quoted string using `` to escape
+        // 2. square bracket quoted string (SQL Server) using ]] to escape
+        // 3. double quoted string using "" or \" to escape
+        // 4. single quoted string using '' or \' to escape
+        if (preg_match('/^(((`[^`]*($|`))+)|((\[[^\]]*($|\]))(\][^\]]*($|\]))*)|(("[^"\\\\]*(?:\\\\.[^"\\\\]*)*("|$))+)|((\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*(\'|$))+))/s', $string, $matches)) {
+            $ret = $matches[1];
+        }
+
+        return $ret;
+    }
+
+    /**
+     * Takes a SQL string and breaks it into tokens.
+     * Each token is an associative array with type and value.
+     *
+     * @param String $string The SQL string
+     *
+     * @return Array An array of tokens.
+     */
+    protected static function tokenize($string)
+    {
+        self::init();
+
+        $tokens = array();
+
+        // Used for debugging if there is an error while tokenizing the string
+        $original_length = strlen($string);
+
+        // Used to make sure the string keeps shrinking on each iteration
+        $old_string_len = strlen($string) + 1;
+
+        $token = null;
+
+        $current_length = strlen($string);
+
+        // Keep processing the string until it is empty
+        while ($current_length) {
+            // If the string stopped shrinking, there was a problem
+            if ($old_string_len <= $current_length) {
+                $tokens[] = array(
+                    self::TOKEN_VALUE => $string,
+                    self::TOKEN_TYPE  => self::TOKEN_TYPE_ERROR
+                );
+
+                return $tokens;
+            }
+            $old_string_len = $current_length;
+
+            // Determine if we can use caching
+            if ($current_length >= self::$max_cachekey_size) {
+                $cacheKey = substr($string, 0, self::$max_cachekey_size);
+            } else {
+                $cacheKey = false;
+            }
+
+            // See if the token is already cached
+            if ($cacheKey && isset(self::$token_cache[$cacheKey])) {
+                // Retrieve from cache
+                $token        = self::$token_cache[$cacheKey];
+                $token_length = strlen($token[self::TOKEN_VALUE]);
+                self::$cache_hits++;
+            } else {
+                // Get the next token and the token type
+                $token        = self::getNextToken($string, $token);
+                $token_length = strlen($token[self::TOKEN_VALUE]);
+                self::$cache_misses++;
+
+                // If the token is shorter than the max length, store it in cache
+                if ($cacheKey && $token_length < self::$max_cachekey_size) {
+                    self::$token_cache[$cacheKey] = $token;
+                }
+            }
+
+            $tokens[] = $token;
+
+            // Advance the string
+            $string = substr($string, $token_length);
+
+            $current_length -= $token_length;
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * Format the whitespace in a SQL string to make it easier to read.
+     *
+     * @param String $string The SQL string
+     * @param boolean $highlight If true, syntax highlighting will also be performed
+     *
+     * @return String The SQL string with HTML styles and formatting wrapped in a <pre> tag
+     */
+    public static function format($string, $highlight = true)
+    {
+        // This variable will be populated with formatted html
+        $return = '';
+
+        // Use an actual tab while formatting and then switch out with self::$tab at the end
+        $tab = "\t";
+
+        $indent_level            = 0;
+        $newline                 = false;
+        $inline_parentheses      = false;
+        $increase_special_indent = false;
+        $increase_block_indent   = false;
+        $indent_types            = array();
+        $added_newline           = false;
+        $inline_count            = 0;
+        $inline_indented         = false;
+        $clause_limit            = false;
+
+        // Tokenize String
+        $original_tokens = self::tokenize($string);
+
+        // Remove existing whitespace
+        $tokens = array();
+        foreach ($original_tokens as $i => $token) {
+            if ($token[self::TOKEN_TYPE] !== self::TOKEN_TYPE_WHITESPACE) {
+                $token['i'] = $i;
+                $tokens[]   = $token;
+            }
+        }
+
+        // Format token by token
+        foreach ($tokens as $i => $token) {
+            // Get highlighted token if doing syntax highlighting
+            if ($highlight) {
+                $highlighted = self::highlightToken($token);
+            } else { // If returning raw text
+                $highlighted = $token[self::TOKEN_VALUE];
+            }
+
+            // If we are increasing the special indent level now
+            if ($increase_special_indent) {
+                $indent_level++;
+                $increase_special_indent = false;
+                array_unshift($indent_types, 'special');
+            }
+            // If we are increasing the block indent level now
+            if ($increase_block_indent) {
+                $indent_level++;
+                $increase_block_indent = false;
+                array_unshift($indent_types, 'block');
+            }
+
+            // If we need a new line before the token
+            if ($newline) {
+                $return .= "\n" . str_repeat($tab, $indent_level);
+                $newline       = false;
+                $added_newline = true;
+            } else {
+                $added_newline = false;
+            }
+
+            // Display comments directly where they appear in the source
+            if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_COMMENT || $token[self::TOKEN_TYPE] === self::TOKEN_TYPE_BLOCK_COMMENT) {
+                if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_BLOCK_COMMENT) {
+                    $indent = str_repeat($tab, $indent_level);
+                    $return .= "\n" . $indent;
+                    $highlighted = str_replace("\n", "\n" . $indent, $highlighted);
+                }
+
+                $return .= $highlighted;
+                $newline = true;
+                continue;
+            }
+
+            if ($inline_parentheses) {
+                // End of inline parentheses
+                if ($token[self::TOKEN_VALUE] === ')') {
+                    $return = rtrim($return, ' ');
+
+                    if ($inline_indented) {
+                        array_shift($indent_types);
+                        $indent_level--;
+                        $return .= "\n" . str_repeat($tab, $indent_level);
+                    }
+
+                    $inline_parentheses = false;
+
+                    $return .= $highlighted . ' ';
+                    continue;
+                }
+
+                if ($token[self::TOKEN_VALUE] === ',') {
+                    if ($inline_count >= 30) {
+                        $inline_count = 0;
+                        $newline      = true;
+                    }
+                }
+
+                $inline_count += strlen($token[self::TOKEN_VALUE]);
+            }
+
+            // Opening parentheses increase the block indent level and start a new line
+            if ($token[self::TOKEN_VALUE] === '(') {
+                // First check if this should be an inline parentheses block
+                // Examples are "NOW()", "COUNT(*)", "int(10)", key(`somecolumn`), DECIMAL(7,2)
+                // Allow up to 3 non-whitespace tokens inside inline parentheses
+                $length = 0;
+                for ($j = 1; $j <= 250; $j++) {
+                    // Reached end of string
+                    if (!isset($tokens[$i + $j])) {
+                        break;
+                    }
+
+                    $next = $tokens[$i + $j];
+
+                    // Reached closing parentheses, able to inline it
+                    if ($next[self::TOKEN_VALUE] === ')') {
+                        $inline_parentheses = true;
+                        $inline_count       = 0;
+                        $inline_indented    = false;
+                        break;
+                    }
+
+                    // Reached an invalid token for inline parentheses
+                    if ($next[self::TOKEN_VALUE] === ';' || $next[self::TOKEN_VALUE] === '(') {
+                        break;
+                    }
+
+                    // Reached an invalid token type for inline parentheses
+                    if ($next[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_TOPLEVEL || $next[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_NEWLINE || $next[self::TOKEN_TYPE] === self::TOKEN_TYPE_COMMENT || $next[self::TOKEN_TYPE] === self::TOKEN_TYPE_BLOCK_COMMENT) {
+                        break;
+                    }
+
+                    $length += strlen($next[self::TOKEN_VALUE]);
+                }
+
+                if ($inline_parentheses && $length > 30) {
+                    $increase_block_indent = true;
+                    $inline_indented       = true;
+                    $newline               = true;
+                }
+
+                // Take out the preceding space unless there was whitespace there in the original query
+                if (isset($original_tokens[$token['i'] - 1]) && $original_tokens[$token['i'] - 1][self::TOKEN_TYPE] !== self::TOKEN_TYPE_WHITESPACE) {
+                    $return = rtrim($return, ' ');
+                }
+
+                if (!$inline_parentheses) {
+                    $increase_block_indent = true;
+                    // Add a newline after the parentheses
+                    $newline = true;
+                }
+
+            } // Closing parentheses decrease the block indent level
+            elseif ($token[self::TOKEN_VALUE] === ')') {
+                // Remove whitespace before the closing parentheses
+                $return = rtrim($return, ' ');
+
+                $indent_level--;
+
+                // Reset indent level
+                while ($j = array_shift($indent_types)) {
+                    if ($j === 'special') {
+                        $indent_level--;
+                    } else {
+                        break;
+                    }
+                }
+
+                if ($indent_level < 0) {
+                    // This is an error
+                    $indent_level = 0;
+
+                    if ($highlight) {
+                        $return .= "\n" . self::highlightError($token[self::TOKEN_VALUE]);
+                        continue;
+                    }
+                }
+
+                // Add a newline before the closing parentheses (if not already added)
+                if (!$added_newline) {
+                    $return .= "\n" . str_repeat($tab, $indent_level);
+                }
+            } // Top level reserved words start a new line and increase the special indent level
+            elseif ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_TOPLEVEL) {
+                $increase_special_indent = true;
+
+                // If the last indent type was 'special', decrease the special indent for this round
+                reset($indent_types);
+                if (current($indent_types) === 'special') {
+                    $indent_level--;
+                    array_shift($indent_types);
+                }
+
+                // Add a newline after the top level reserved word
+                $newline = true;
+                // Add a newline before the top level reserved word (if not already added)
+                if (!$added_newline) {
+                    $return .= "\n" . str_repeat($tab, $indent_level);
+                } // If we already added a newline, redo the indentation since it may be different now
+                else {
+                    $return = rtrim($return, $tab) . str_repeat($tab, $indent_level);
+                }
+
+                // If the token may have extra whitespace
+                if (strpos($token[self::TOKEN_VALUE], ' ') !== false || strpos($token[self::TOKEN_VALUE], "\n") !== false || strpos($token[self::TOKEN_VALUE], "\t") !== false) {
+                    $highlighted = preg_replace('/\s+/', ' ', $highlighted);
+                }
+                //if SQL 'LIMIT' clause, start variable to reset newline
+                if ($token[self::TOKEN_VALUE] === 'LIMIT' && !$inline_parentheses) {
+                    $clause_limit = true;
+                }
+            } // Checks if we are out of the limit clause
+            elseif ($clause_limit && $token[self::TOKEN_VALUE] !== "," && $token[self::TOKEN_TYPE] !== self::TOKEN_TYPE_NUMBER && $token[self::TOKEN_TYPE] !== self::TOKEN_TYPE_WHITESPACE) {
+                $clause_limit = false;
+            } // Commas start a new line (unless within inline parentheses or SQL 'LIMIT' clause)
+            elseif ($token[self::TOKEN_VALUE] === ',' && !$inline_parentheses) {
+                //If the previous TOKEN_VALUE is 'LIMIT', resets new line
+                if ($clause_limit === true) {
+                    $newline      = false;
+                    $clause_limit = false;
+                } // All other cases of commas
+                else {
+                    $newline = true;
+                }
+            } // Newline reserved words start a new line
+            elseif ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_NEWLINE) {
+                // Add a newline before the reserved word (if not already added)
+                if (!$added_newline) {
+                    $return .= "\n" . str_repeat($tab, $indent_level);
+                }
+
+                // If the token may have extra whitespace
+                if (strpos($token[self::TOKEN_VALUE], ' ') !== false || strpos($token[self::TOKEN_VALUE], "\n") !== false || strpos($token[self::TOKEN_VALUE], "\t") !== false) {
+                    $highlighted = preg_replace('/\s+/', ' ', $highlighted);
+                }
+            } // Multiple boundary characters in a row should not have spaces between them (not including parentheses)
+            elseif ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_BOUNDARY) {
+                if (isset($tokens[$i - 1]) && $tokens[$i - 1][self::TOKEN_TYPE] === self::TOKEN_TYPE_BOUNDARY) {
+                    if (isset($original_tokens[$token['i'] - 1]) && $original_tokens[$token['i'] - 1][self::TOKEN_TYPE] !== self::TOKEN_TYPE_WHITESPACE) {
+                        $return = rtrim($return, ' ');
+                    }
+                }
+            }
+
+            // If the token shouldn't have a space before it
+            if ($token[self::TOKEN_VALUE] === '.' || $token[self::TOKEN_VALUE] === ',' || $token[self::TOKEN_VALUE] === ';') {
+                $return = rtrim($return, ' ');
+            }
+
+            $return .= $highlighted . ' ';
+
+            // If the token shouldn't have a space after it
+            if ($token[self::TOKEN_VALUE] === '(' || $token[self::TOKEN_VALUE] === '.') {
+                $return = rtrim($return, ' ');
+            }
+
+            // If this is the "-" of a negative number, it shouldn't have a space after it
+            if ($token[self::TOKEN_VALUE] === '-' && isset($tokens[$i + 1]) && $tokens[$i + 1][self::TOKEN_TYPE] === self::TOKEN_TYPE_NUMBER && isset($tokens[$i - 1])) {
+                $prev = $tokens[$i - 1][self::TOKEN_TYPE];
+                if ($prev !== self::TOKEN_TYPE_QUOTE && $prev !== self::TOKEN_TYPE_BACKTICK_QUOTE && $prev !== self::TOKEN_TYPE_WORD && $prev !== self::TOKEN_TYPE_NUMBER) {
+                    $return = rtrim($return, ' ');
+                }
+            }
+        }
+
+        // If there are unmatched parentheses
+        if ($highlight && array_search('block', $indent_types) !== false) {
+            $return .= "\n" . self::highlightError("WARNING: unclosed parentheses or section");
+        }
+
+        // Replace tab characters with the configuration tab character
+        $return = trim(str_replace("\t", self::$tab, $return));
+
+        if ($highlight) {
+            $return = self::output($return);
+        }
+
+        return $return;
+    }
+
+    /**
+     * Add syntax highlighting to a SQL string
+     *
+     * @param String $string The SQL string
+     *
+     * @return String The SQL string with HTML styles applied
+     */
+    public static function highlight($string)
+    {
+        $tokens = self::tokenize($string);
+
+        $return = '';
+
+        foreach ($tokens as $token) {
+            $return .= self::highlightToken($token);
+        }
+
+        return self::output($return);
+    }
+
+    /**
+     * Split a SQL string into multiple queries.
+     * Uses ";" as a query delimiter.
+     *
+     * @param String $string The SQL string
+     *
+     * @return Array An array of individual query strings without trailing semicolons
+     */
+    public static function splitQuery($string)
+    {
+        $queries       = array();
+        $current_query = '';
+        $empty         = true;
+
+        $tokens = self::tokenize($string);
+
+        foreach ($tokens as $token) {
+            // If this is a query separator
+            if ($token[self::TOKEN_VALUE] === ';') {
+                if (!$empty) {
+                    $queries[] = $current_query . ';';
+                }
+                $current_query = '';
+                $empty         = true;
+                continue;
+            }
+
+            // If this is a non-empty character
+            if ($token[self::TOKEN_TYPE] !== self::TOKEN_TYPE_WHITESPACE && $token[self::TOKEN_TYPE] !== self::TOKEN_TYPE_COMMENT && $token[self::TOKEN_TYPE] !== self::TOKEN_TYPE_BLOCK_COMMENT) {
+                $empty = false;
+            }
+
+            $current_query .= $token[self::TOKEN_VALUE];
+        }
+
+        if (!$empty) {
+            $queries[] = trim($current_query);
+        }
+
+        return $queries;
+    }
+
+    /**
+     * Remove all comments from a SQL string
+     *
+     * @param String $string The SQL string
+     *
+     * @return String The SQL string without comments
+     */
+    public static function removeComments($string)
+    {
+        $result = '';
+
+        $tokens = self::tokenize($string);
+
+        foreach ($tokens as $token) {
+            // Skip comment tokens
+            if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_COMMENT || $token[self::TOKEN_TYPE] === self::TOKEN_TYPE_BLOCK_COMMENT) {
+                continue;
+            }
+
+            $result .= $token[self::TOKEN_VALUE];
+        }
+        $result = self::format($result, false);
+
+        return $result;
+    }
+
+    /**
+     * Compress a query by collapsing white space and removing comments
+     *
+     * @param String $string The SQL string
+     *
+     * @return String The SQL string without comments
+     */
+    public static function compress($string)
+    {
+        $result = '';
+
+        $tokens = self::tokenize($string);
+
+        $whitespace = true;
+        foreach ($tokens as $token) {
+            // Skip comment tokens
+            if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_COMMENT || $token[self::TOKEN_TYPE] === self::TOKEN_TYPE_BLOCK_COMMENT) {
+                continue;
+            } // Remove extra whitespace in reserved words (e.g "OUTER     JOIN" becomes "OUTER JOIN")
+            elseif ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED || $token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_NEWLINE || $token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_TOPLEVEL) {
+                $token[self::TOKEN_VALUE] = preg_replace('/\s+/', ' ', $token[self::TOKEN_VALUE]);
+            }
+
+            if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_WHITESPACE) {
+                // If the last token was whitespace, don't add another one
+                if ($whitespace) {
+                    continue;
+                } else {
+                    $whitespace = true;
+                    // Convert all whitespace to a single space
+                    $token[self::TOKEN_VALUE] = ' ';
+                }
+            } else {
+                $whitespace = false;
+            }
+
+            $result .= $token[self::TOKEN_VALUE];
+        }
+
+        return rtrim($result);
+    }
+
+    /**
+     * Highlights a token depending on its type.
+     *
+     * @param Array $token An associative array containing type and value.
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightToken($token)
+    {
+        $type = $token[self::TOKEN_TYPE];
+
+        if (self::is_cli()) {
+            $token = $token[self::TOKEN_VALUE];
+        } else {
+            if (defined('ENT_IGNORE')) {
+                $token = htmlentities($token[self::TOKEN_VALUE], ENT_COMPAT | ENT_IGNORE, 'UTF-8');
+            } else {
+                $token = htmlentities($token[self::TOKEN_VALUE], ENT_COMPAT, 'UTF-8');
+            }
+        }
+
+        if ($type === self::TOKEN_TYPE_BOUNDARY) {
+            return self::highlightBoundary($token);
+        } elseif ($type === self::TOKEN_TYPE_WORD) {
+            return self::highlightWord($token);
+        } elseif ($type === self::TOKEN_TYPE_BACKTICK_QUOTE) {
+            return self::highlightBacktickQuote($token);
+        } elseif ($type === self::TOKEN_TYPE_QUOTE) {
+            return self::highlightQuote($token);
+        } elseif ($type === self::TOKEN_TYPE_RESERVED) {
+            return self::highlightReservedWord($token);
+        } elseif ($type === self::TOKEN_TYPE_RESERVED_TOPLEVEL) {
+            return self::highlightReservedWord($token);
+        } elseif ($type === self::TOKEN_TYPE_RESERVED_NEWLINE) {
+            return self::highlightReservedWord($token);
+        } elseif ($type === self::TOKEN_TYPE_NUMBER) {
+            return self::highlightNumber($token);
+        } elseif ($type === self::TOKEN_TYPE_VARIABLE) {
+            return self::highlightVariable($token);
+        } elseif ($type === self::TOKEN_TYPE_COMMENT || $type === self::TOKEN_TYPE_BLOCK_COMMENT) {
+            return self::highlightComment($token);
+        }
+
+        return $token;
+    }
+
+    /**
+     * Highlights a quoted string
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightQuote($value)
+    {
+        if (self::is_cli()) {
+            return self::$cli_quote . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$quote_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Highlights a backtick quoted string
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightBacktickQuote($value)
+    {
+        if (self::is_cli()) {
+            return self::$cli_backtick_quote . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$backtick_quote_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Highlights a reserved word
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightReservedWord($value)
+    {
+        if (self::is_cli()) {
+            return self::$cli_reserved . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$reserved_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Highlights a boundary token
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightBoundary($value)
+    {
+        if ($value === '(' || $value === ')') {
+            return $value;
+        }
+
+        if (self::is_cli()) {
+            return self::$cli_boundary . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$boundary_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Highlights a number
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightNumber($value)
+    {
+        if (self::is_cli()) {
+            return self::$cli_number . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$number_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Highlights an error
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightError($value)
+    {
+        if (self::is_cli()) {
+            return self::$cli_error . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$error_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Highlights a comment
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightComment($value)
+    {
+        if (self::is_cli()) {
+            return self::$cli_comment . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$comment_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Highlights a word token
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightWord($value)
+    {
+        if (self::is_cli()) {
+            return self::$cli_word . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$word_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Highlights a variable token
+     *
+     * @param String $value The token's value
+     *
+     * @return String HTML code of the highlighted token.
+     */
+    protected static function highlightVariable($value)
+    {
+        if (self::is_cli()) {
+            return self::$cli_variable . $value . "\x1b[0m";
+        } else {
+            return '<span ' . self::$variable_attributes . '>' . $value . '</span>';
+        }
+    }
+
+    /**
+     * Helper function for building regular expressions for reserved words and boundary characters
+     *
+     * @param String $a The string to be quoted
+     *
+     * @return String The quoted string
+     */
+    private static function quote_regex($a)
+    {
+        return preg_quote($a, '/');
+    }
+
+    /**
+     * Helper function for building string output
+     *
+     * @param String $string The string to be quoted
+     *
+     * @return String The quoted string
+     */
+    private static function output($string)
+    {
+        if (self::is_cli()) {
+            return $string . "\n";
+        } else {
+            $string = trim($string);
+            if (!self::$use_pre) {
+                return $string;
+            }
+
+            return '<pre ' . self::$pre_attributes . '>' . $string . '</pre>';
+        }
+    }
+
+    private static function is_cli()
+    {
+        if (isset(self::$cli)) {
+            return self::$cli;
+        } else {
+            return php_sapi_name() === 'cli';
+        }
+    }
+
+}
+
+
+/**
  * Alias for JBDump::i()->dump($var) with additions params
- * @param   mixed   $var    Variable
- * @param   string  $name   Variable name
- * @param   bool    $isDie  Die after dump
+ * @param   mixed $var Variable
+ * @param   string $name Variable name
+ * @param   bool $isDie Die after dump
  * @return  JBDump
  */
-function JBDump($var = 'JBDump::variable is no set', $isDie = true, $name = '...')
+function jbdump($var = 'JBDump::variable is no set', $isDie = true, $name = '...')
 {
     $_this = JBDump::i();
 
