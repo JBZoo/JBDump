@@ -99,8 +99,7 @@ class JBDump
             'maxDepth'       => 4, // the maximum depth of the dump
             'showMethods'    => true, // show object methods
             'die'            => false, // die after dumping variable
-            'stringExtra'    => true, // always show extra for strings
-            'stringTextarea' => -1, // show string vars in <textarea> or in <pre> (-1 is auto)
+            'stringTextarea' => true, // show string vars in <textarea> or in <pre> (-1 is auto)
             'expandLevel'    => 1, // expand the list to the specified depth
         ),
     );
@@ -1848,7 +1847,7 @@ class JBDump
     {
         $dataLength = strlen($data);
 
-        $_extra = (self::$_config['dump']['stringExtra'] && $data);
+        $_extra = false;
         if ($advType == 'html') {
             $_extra = true;
             $_      = 'HTML Code';
@@ -1869,6 +1868,12 @@ class JBDump
         } else {
             $_ = $data;
 
+            if (strpos($data, "\r") !== false || strpos($data, "\n") !== false) {
+                $_extra = true;
+            } else {
+                $_extra = false;
+            }
+
             if (strlen($data)) {
                 if (strLen($data) > self::$_config['dump']['stringLength']) {
                     if (function_exists('mb_substr')) {
@@ -1876,20 +1881,13 @@ class JBDump
                     } else {
                         $_ = substr($data, 0, self::$_config['dump']['stringLength'] - 3) . '...';
                     }
-                    $_extra = false;
+
+                    $_extra = true;
                 }
+
                 $_ = htmlSpecialChars($_);
 
-                $isTextarea = (int)self::$_config['dump']['stringTextarea'];
-                if (self::$_config['dump']['stringTextarea'] == -1) {
-                    if (strpos($data, "\r") !== false || strpos($data, "\n") !== false) {
-                        $isTextarea = true;
-                    } else {
-                        $isTextarea = false;
-                    }
-                }
-
-                if ($isTextarea) {
+                if (self::$_config['dump']['stringTextarea']) {
                     $data = '<textarea readonly="readonly" class="jbdump">' . htmlSpecialChars($data) . '</textarea>';
                 } else {
                     $data = '<pre class="jbdump">' . htmlSpecialChars($data) . '</pre>';
