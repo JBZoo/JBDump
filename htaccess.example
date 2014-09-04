@@ -1,28 +1,5 @@
-# charset
-php_value   default_charset   utf-8
-AddDefaultCharset utf-8
-AddCharset utf-8 .html .css .js .xml .json .rss
-
-# show php errorrs
-php_value   display_errors    1
-
-# mbstring config
-php_value   mbstring.language               neutral
-php_value   mbstring.func_overload          0
-php_value   mbstring.http_input             pass
-php_value   mbstring.http_output            pass
-php_value   mbstring.encoding_translation   0
-
 # example for windows (denwer)
 #php_value      auto_prepend_file   W:\home\adm\jbdump\public_html\init.php
 
 # example for linux
 #php_value      auto_prepend_file   /var/www/jdump/data/public_html/init.php
-
-# default file in directory
-DirectoryIndex index.php
-
-# anti cache
-<IfModule mod_expires.c>
-    ExpiresByType text/html                "access plus 0 seconds"
-</IfModule>
