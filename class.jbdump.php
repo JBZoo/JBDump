@@ -1868,7 +1868,12 @@ class JBDump
         } else {
             $_ = $data;
 
-            if (strpos($data, "\r") !== false || strpos($data, "\n") !== false) {
+            if (!(
+                strpos($data, "\r") === false &&
+                strpos($data, "\n") === false &&
+                strpos($data, "  ") === false &&
+                strpos($data, "\t") === false
+            )) {
                 $_extra = true;
             } else {
                 $_extra = false;
@@ -1956,7 +1961,7 @@ class JBDump
         <li class="jbdump-child">
         <div class="jbdump-element<?php echo $isExpand ? ' jbdump-expand' : ''; ?> <?= $isExpanded ? 'jbdump-opened' : ''; ?>"
             <?php if ($isExpand) { ?> onClick="jbdump.toggle(this);"<?php } ?> onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
-            <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type"><span class="jbdump-type-object">Object :: <?php echo get_class($data); ?></span>, <?php echo count(get_object_vars($data)); ?>
+            <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type"><span class="jbdump-type-object"><?php echo get_class($data); ?></span>, <?php echo count(get_object_vars($data)); ?>
             </em>)
         </div>
         <?php if ($isExpand) {
@@ -2196,9 +2201,10 @@ class JBDump
                 .jbdump-type-integer, .jbdump-type-float {color:#00e;}
                 .jbdump-type-boolean {color:#e00;}
                 .jbdump-type-string {color:#090;}
-                .jbdump-type-array {color:#e0e;}
+                .jbdump-type-array {color:#990;}
                 .jbdump-type-null {color:#aaa; font-weight:bold;}
                 .jbdump-type-max-depth {color:#f00; font-weight:bold;}
+                .jbdump-type-object {color:#c0c;}
                 div.jbdump-preview{font:normal 13px courier new;background:#F9F9B5;border:solid 1px olive;overflow:auto;margin:5px 1em 1em 0;padding:5px;}
                 li.jbdump-footnote{background:#FFF url(data:;base64,R0lGODlhCgACALMAAP///8DAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAKAAIAAAQIEMhJA7D4gggAOw==) repeat-x;list-style:none;cursor:default;padding:4px 5px 3px;}
                 li.jbdump-footnote h6{font:bold 10px verdana;color:navy;display:inline;margin:0;padding:0;}
