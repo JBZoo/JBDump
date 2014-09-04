@@ -100,7 +100,7 @@ class JBDump
             'showMethods'    => true, // show object methods
             'die'            => false, // die after dumping variable
             'stringExtra'    => true, // always show extra for strings
-            'stringTextarea' => true, // show string vars in <textarea> or in <pre>
+            'stringTextarea' => -1, // show string vars in <textarea> or in <pre> (-1 is auto)
             'expandLevel'    => 1, // expand the list to the specified depth
         ),
     );
@@ -1876,11 +1876,20 @@ class JBDump
                     } else {
                         $_ = substr($data, 0, self::$_config['dump']['stringLength'] - 3) . '...';
                     }
-                    $_extra = true;
+                    $_extra = false;
                 }
                 $_ = htmlSpecialChars($_);
 
-                if (self::$_config['dump']['stringTextarea']) {
+                $isTextarea = (int)self::$_config['dump']['stringTextarea'];
+                if (self::$_config['dump']['stringTextarea'] == -1) {
+                    if (strpos($data, "\r") !== false || strpos($data, "\n") !== false) {
+                        $isTextarea = true;
+                    } else {
+                        $isTextarea = false;
+                    }
+                }
+
+                if ($isTextarea) {
                     $data = '<textarea readonly="readonly" class="jbdump">' . htmlSpecialChars($data) . '</textarea>';
                 } else {
                     $data = '<pre class="jbdump">' . htmlSpecialChars($data) . '</pre>';
