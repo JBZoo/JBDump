@@ -2168,6 +2168,7 @@ class JBDump
             </script>
             <style>
                 .jbdump{border:solid 1px #333;-webkit-border-radius:6px;-khtml-border-radius:6px;-moz-border-radius:6px;border-radius:6px;position:relative;z-index:10101;min-width:400px;margin:6px;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;}
+                .jbdump ::selection {background: #89cac9;color: #333;text-shadow: none;}
                 .jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;font-family:Verdana, Arial, Helvetica;margin:0;padding:0;color:#333;}
                 .jbdump li{list-style:none !important;}
                 .jbdump .jbnode .jbnode{margin-left:20px;}
