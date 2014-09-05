@@ -95,11 +95,10 @@ class JBDump
         // // // dump config
         'dump'     => array(
             'render'         => 'html', // (lite|log|mail|print_r|var_dump|html)
-            'stringLength'   => 100, // cutting long string
+            'stringLength'   => 80, // cutting long string
             'maxDepth'       => 4, // the maximum depth of the dump
             'showMethods'    => true, // show object methods
             'die'            => false, // die after dumping variable
-            'stringTextarea' => true, // show string vars in <textarea> or in <pre> (-1 is auto)
             'expandLevel'    => 1, // expand the list to the specified depth
         ),
     );
@@ -1504,17 +1503,15 @@ class JBDump
         $text = $this->_getSourceFunction($this->_trace);
         $path = $this->_getSourcePath($this->_trace);
         ?>
-        <div class="jbdump-root">
-            <ul class="jbdump-node jbdump-first">
+        <div class="jbdump">
+            <ul class="jbnode">
                 <?php $this->_dump($data, $varname); ?>
-                <li class="jbdump-footnote">
-
-                    <div class="copyrights">
+                <li class="jbfooter">
+                    <div class="jbversion">
                         <a href="<?php echo $this->_site; ?>" target="_blank">JBDump v<?php echo self::VERSION; ?></a>
                     </div>
-
                     <?php if (self::$_config['showCall']) : ?>
-                        <span class="jbdump-call"><?php echo $text . ' ' . $path; ?></span>
+                        <div class="jbpath"><?php echo $text . ' ' . $path; ?></div>
                     <?php endif; ?>
                 </li>
             </ul>
@@ -1737,8 +1734,8 @@ class JBDump
         $_is_object = is_object($data);
 
         ?>
-        <div class="jbdump-nest" style="<?php echo $isExpanded ? 'display:block' : 'display:none'; ?>">
-            <ul class="jbdump-node">
+        <div class="jbnest" style="<?php echo $isExpanded ? 'display:block' : 'display:none'; ?>">
+            <ul class="jbnode">
                 <?php
                 $keys = ($_is_object) ? array_keys(get_object_vars($data)) : array_keys($data);
 
@@ -1782,9 +1779,10 @@ class JBDump
     protected function _null($name)
     {
         ?>
-        <li class="jbdump-child">
-            <div class="jbdump-element" onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
-                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type jbdump-type-null">NULL</em>)
+        <li class="jbchild">
+            <div class="jbelement">
+                <span class="jbname"><?php echo $name; ?></span>
+                (<span class="jbtype jbtype-null">NULL</span>)
             </div>
         </li>
     <?php
@@ -1852,7 +1850,7 @@ class JBDump
             $_extra = true;
             $_      = 'HTML Code';
 
-            $data = '<pre class="jbdump">' . $data . '</pre>';
+            $data = '<pre class="jbpreview">' . $data . '</pre>';
 
         } elseif ($advType == 'source') {
             $_extra = true;
@@ -1863,8 +1861,8 @@ class JBDump
                 $data = "<?php\n" . $data;
             }
 
-            $data = highlight_string($data, true);
-
+            $data = '<pre class="jbpreview">' . highlight_string($data, true) . '</pre>';
+            
         } else {
             $_ = $data;
 
@@ -1891,29 +1889,20 @@ class JBDump
                 }
 
                 $_ = htmlSpecialChars($_);
-
-                if (self::$_config['dump']['stringTextarea']) {
-                    $data = '<textarea readonly="readonly" class="jbdump">' . htmlSpecialChars($data) . '</textarea>';
-                } else {
-                    $data = '<pre class="jbdump">' . htmlSpecialChars($data) . '</pre>';
-                }
+                $data = '<textarea readonly="readonly" class="jbpreview">' . htmlSpecialChars($data) . '</textarea>';
             }
-
         }
         ?>
-        <li class="jbdump-child">
-            <div class="jbdump-element <?php echo $_extra ? ' jbdump-expand' : ''; ?>"
-                <?php if ($_extra) { ?> onClick="jbdump.toggle(this);"<?php } ?> onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
-                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type"><span class="jbdump-type-string">String</span>,
-                    <strong class="jbdump-string-length"><?php echo $dataLength; ?></strong></em>)
-                <strong class="jbdump-string"><?php echo $_; ?></strong>
+        <li class="jbchild">
+            <div class="jbelement <?php echo $_extra ? ' jbexpand' : ''; ?>" <?php if ($_extra) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
+                <span class="jbname"><?php echo $name; ?></span>
+                (<span class="jbtype jbtype-string">String</span>, <?php echo $dataLength; ?>)
+                <span class="jbvalue"><?php echo $_; ?></span>
             </div>
             <?php if ($_extra) { ?>
-                <div class="jbdump-nest" style="display:none;">
-                    <ul class="jbdump-node">
-                        <li class="jbdump-child">
-                            <div class="jbdump-preview"><?php echo $data; ?></div>
-                        </li>
+                <div class="jbnest" style="display:none;">
+                    <ul class="jbnode">
+                        <li class="jbchild"><?php echo $data; ?></li>
                     </ul>
                 </div>
             <?php } ?>
@@ -1933,11 +1922,10 @@ class JBDump
         $isExpanded = $this->_isExpandedLevel();
 
         ?>
-        <li class="jbdump-child">
-            <div class="jbdump-element<?php echo count($data) > 0 ? ' jbdump-expand' : ''; ?> <?= $isExpanded ? 'jbdump-opened' : ''; ?>"
-                <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?> onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
-                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type"><span class="jbdump-type-array">Array</span>,
-                    <strong class="jbdump-array-length"><?php echo count($data); ?></strong></em>)
+        <li class="jbchild">
+            <div class="jbelement<?php echo count($data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
+                <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
+                <span class="jbname"><?php echo $name; ?></span> (<span class="jbtype jbtype-array">Array</span>, <?php echo count($data); ?>)
             </div>
             <?php if (count($data)) {
                 $this->_vars($data, $isExpanded);
@@ -1958,11 +1946,11 @@ class JBDump
         $isExpanded = $this->_isExpandedLevel();
 
         ?>
-        <li class="jbdump-child">
-        <div class="jbdump-element<?php echo $isExpand ? ' jbdump-expand' : ''; ?> <?= $isExpanded ? 'jbdump-opened' : ''; ?>"
-            <?php if ($isExpand) { ?> onClick="jbdump.toggle(this);"<?php } ?> onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
-            <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type"><span class="jbdump-type-object"><?php echo get_class($data); ?></span>, <?php echo count(get_object_vars($data)); ?>
-            </em>)
+        <li class="jbchild">
+        <div class="jbelement<?php echo $isExpand ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
+            <?php if ($isExpand) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
+            <span class="jbname"><?php echo $name; ?></span>
+            (<span class="jbtype jbtype-object"><?php echo get_class($data); ?></span>, <?php echo count(get_object_vars($data)); ?>)
         </div>
         <?php if ($isExpand) {
         $this->_vars($data, $isExpanded);
@@ -1981,12 +1969,11 @@ class JBDump
         $isExpanded = $this->_isExpandedLevel();
 
         ?>
-        <li class="jbdump-child">
-            <div class="jbdump-element<?php echo count($data) > 0 ? ' jbdump-expand' : ''; ?> <?= $isExpanded ? 'jbdump-opened' : ''; ?>"
-                <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>
-                 onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
-                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type">Closure</em>)
-                <strong class="jbdump-class"><?php echo get_class($data); ?></strong>
+        <li class="jbchild">
+            <div class="jbelement<?php echo count($data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
+                <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
+                <span class="jbname"><?php echo $name; ?></span> (<span class="jbtype jbtype-closure">Closure</span>)
+                <span class="jbvalue"><?php echo get_class($data); ?></span>
             </div>
             <?php $this->_vars($this->_getFunction($data), $isExpanded); ?>
         </li>
@@ -2027,10 +2014,11 @@ class JBDump
     {
         $typeAlias = str_replace(' ', '-', strtolower($type));
         ?>
-        <li class="jbdump-child">
-            <div class="jbdump-element" onMouseOver="jbdump.over(this);" onMouseOut="jbdump.out(this);">
-                <a class="jbdump-name"><?php echo $name; ?></a> (<em class="jbdump-type jbdump-type-<?php echo $typeAlias; ?>"><?php echo $type; ?></em>)
-                <strong class="jbdump-<?php echo $typeAlias; ?>"><?php echo $data; ?></strong>
+        <li class="jbchild">
+            <div class="jbelement">
+                <span class="jbname"><?php echo $name; ?></span>
+                (<span class="jbtype jbtype-<?php echo $typeAlias; ?>"><?php echo $type; ?></span>)
+                <span class="jbvalue"><?php echo $data; ?></span>
             </div>
         </li>
     <?php
@@ -2168,58 +2156,46 @@ class JBDump
         static $loaded;
         if (!isset($loaded) || $force) {
             $loaded = true;
-
-            echo '
-            <script type="text/javascript">
-                function jbdump(){}
-                jbdump.reclass=function(el,className){if(el.className.indexOf(className)<0)el.className+=" "+className};
-                jbdump.unclass=function(el,className){if(el.className.indexOf(className)>-1)el.className=el.className.replace(className,"")};
-                jbdump.toggle=function(el){var ul=el.parentNode.getElementsByTagName("ul");for(var i=0;i<ul.length;i++)if(ul[i].parentNode.parentNode==el.parentNode)ul[i].parentNode.style.display=ul[i].parentNode.style.display=="none"?"block":"none";if(ul[0].parentNode.style.display=="block")jbdump.reclass(el,"jbdump-opened");else jbdump.unclass(el,"jbdump-opened")};
-                jbdump.over=function(el){jbdump.reclass(el,"jbdump-hover")};
-                jbdump.out=function(el){jbdump.unclass(el,"jbdump-hover")};
-            </script>';
-
-            echo '
-            <style type="text/css">
-                ul.jbdump-node{background-color:#fff!important;color:#333!important;list-style:none;text-align:left!important;margin:0!important;padding:0;}
-                ul.jbdump-node ul.jbdump-node{margin-left:15px!important;}
-                ul.jbdump-node pre, ul.jbdump-node textarea{font-size:92%;font-family:Courier,Monaco,"Lucida Console";width:100%;background:inherit!important;color:#000;border:none;margin:0;padding:0;}
-                ul.jbdump-node textarea{height:30%;min-height:40px;text-align:left!important; resize:vertical;}
-                ul.jbdump-node ul{margin-left:20px;}
-                ul.jbdump-node li{list-style:none;line-height:12px!important;margin:0 0 0 5px!important;min-height:12px!important;height:auto!important;padding:0!important;}
-                div.jbdump-root{border:solid 1px #000;position:relative;z-index:10101;min-width:400px;margin:5px 0 20px;clear: both;}
-                ul.jbdump-first{font:normal 10px tahoma, verdana;border:solid 1px #FFF;}
-                div.jbdump-root *{opacity:1!important;font-size:12px!important;}
-                li.jbdump-child{display:block;list-style:none;overflow:hidden;margin:0;padding:0;}
-                div.jbdump-element{cursor:default;display:block;clear:both;white-space:nowrap;background-color:#FFF;background-image:url(data:;base64,R0lGODlhCQAJALMAAP////8AAICAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQSEAAhq6VWUpx3n+AVVl42ilkEADs=);background-repeat:no-repeat;background-position:6px 5px;padding:2px 0 3px 20px;}
-                div.jbdump-expand{background-image:url(data:;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQTEIAna33USpwt79vncRpZgpcGRAA7);cursor:pointer;}
-                div.jbdump-hover{background-color:#BFDFFF;}
-                div.jbdump-opened{background-image:url(data:;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQQEMhJ63w4Z6C37JUXWmQJRAA7);}
-                a.jbdump-name{color:#a00;font:14px courier new;line-height:12px;text-decoration:none;}
-                a.jbdump-name big{font:bold 14px Georgia;line-height:10px;position:relative;top:2px;left:-2px;}
-                em.jbdump-type{font-style:normal;margin:0 2px;}
-                .jbdump-type-integer, .jbdump-type-float {color:#00e;}
-                .jbdump-type-boolean {color:#e00;}
-                .jbdump-type-string {color:#090;}
-                .jbdump-type-array {color:#990;}
-                .jbdump-type-null {color:#aaa; font-weight:bold;}
-                .jbdump-type-max-depth {color:#f00; font-weight:bold;}
-                .jbdump-type-object {color:#c0c;}
-                div.jbdump-preview{font:normal 13px courier new;background:#F9F9B5;border:solid 1px olive;overflow:auto;margin:5px 1em 1em 0;padding:5px;}
-                li.jbdump-footnote{background:#FFF url(data:;base64,R0lGODlhCgACALMAAP///8DAwP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAKAAIAAAQIEMhJA7D4gggAOw==) repeat-x;list-style:none;cursor:default;padding:4px 5px 3px;}
-                li.jbdump-footnote h6{font:bold 10px verdana;color:navy;display:inline;margin:0;padding:0;}
-                li.jbdump-footnote a{font:bold 10px arial;color:#434343;text-decoration:none;}
-                li.jbdump-footnote a:hover{color:#000;}
-                li.jbdump-footnote span.jbdump-call{font-size:11px;font-family:Courier,Monaco,"Lucida Console";position:relative;top:1px;}
-                li.jbdump-footnote span.jbdump-call code{font-weight:700;}
-                div.jbdump-title{font:normal 11px Tahoma, Verdana;position:relative;top:9px;cursor:default;line-height:2px;}
-                strong.jbdump-array-length,strong.jbdump-string-length{font-weight:400;color:#009;}
-                .jbdump-footnote .copyrights a{color:#ccc;font-size:8px;}
-                div.jbdump-version,.jbdump-footnote .copyrights{float:right;}
-                pre.jbdump {text-align:left!important;}
-                #jbdump_profile_chart_table td img {height: 12px!important;}
-                #jbdump_profile_chart_table {color:#333!important;}
-                .google-visualization-table-table td img {height: 12px!important;}
+            
+            echo
+            '<script type="text/javascript">
+                function jbdump() {}
+                jbdump.reclass = function (el, className) {if (el.className.indexOf(className) < 0) {el.className += " " + className;}};
+                jbdump.unclass = function (el, className) {if (el.className.indexOf(className) > -1) {el.className = el.className.replace(" " + className, "");}};
+                jbdump.toggle = function (el) {var ul = el.parentNode.getElementsByTagName("ul");for (var i = 0; i < ul.length; i++) {
+                if (ul[i].parentNode.parentNode == el.parentNode) {ul[i].parentNode.style.display = ul[i].parentNode.style.display == "none" ? "block" : "none";}}
+                if (ul[0].parentNode.style.display == "block") {jbdump.reclass(el, "jbopened");} else {jbdump.unclass(el, "jbopened");}};
+            </script>
+            <style>
+                .jbdump{border:solid 1px #333;-webkit-border-radius:6px;-khtml-border-radius:6px;-moz-border-radius:6px;border-radius:6px;position:relative;z-index:10101;min-width:400px;margin:6px;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;}
+                .jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;font-family:Verdana, Arial, Helvetica;margin:0;padding:0;color:#333;}
+                .jbdump li{list-style:none !important;}
+                .jbdump .jbnode .jbnode{margin-left:20px;}
+                .jbdump .jbnode .jbpreview{white-space:nowrap;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;text-align:left !important;width:97%;color:#333;min-width:300px;}
+                .jbdump .jbchild{overflow:hidden;}
+                .jbdump .jbvalue{font-weight:bold;font-family:Tahoma, Verdana, Arial, Helvetica;font-size:12px;}
+                .jbdump .jbfooter{border-top:1px dotted #ccc;padding-top:4px;}
+                .jbdump .jbfooter .jbversion{float:right;}
+                .jbdump .jbfooter .jbversion a{color:#ddd;font-size:10px !important;text-decoration:none;}
+                .jbdump .jbfooter .jbversion a:hover{color:#333;text-decoration:underline;}
+                .jbdump .jbfooter .jbpath{font-family:"Courier New";}
+                .jbdump .jbelement{padding:3px 3px 3px 20px;background-repeat:no-repeat;background-color:#fff;background-position:5px 6px;background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP////8AAICAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQSEAAhq6VWUpx3n+AVVl42ilkEADs=\');}
+                .jbdump .jbelement:hover{background-color:#c6e5ff;}
+                .jbdump .jbelement.jbexpand{background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQTEIAna33USpwt79vncRpZgpcGRAA7\');cursor:pointer;}
+                .jbdump .jbelement.jbexpand.jbopened{background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQQEMhJ63w4Z6C37JUXWmQJRAA7\');}
+                .jbdump .jbelement .jbname{color:#a00;font-weight:bold;}
+                .jbdump .jbelement .jbtype-integer{color:#00d;}
+                .jbdump .jbelement .jbtype-float{color:#099;}
+                .jbdump .jbelement .jbtype-boolean{color:#990;}
+                .jbdump .jbelement .jbtype-string{color:#090;}
+                .jbdump .jbelement .jbtype-array{color:#990;}
+                .jbdump .jbelement .jbtype-null{color:#999;}
+                .jbdump .jbelement .jbtype-max-depth{color:#900;}
+                .jbdump .jbelement .jbtype-object{color:#c0c;}
+                .jbdump .jbelement .jbtype-closure{color:#c0c;}
+                #jbdump_profile_chart_table td img{height:12px !important;}
+                #jbdump_profile_chart_table{color:#333 !important;}
+                .google-visualization-table-table td img{height:12px !important;}
             </style>';
         }
     }
@@ -2772,10 +2748,12 @@ class JBDump
     public function convertTrace($trace, $addObject = false)
     {
         $result = array();
-        foreach ($trace as $key => $info) {
-            $oneTrace = self::i()->_getOneTrace($info, $addObject);
+        if (is_array($trace)) {
+            foreach ($trace as $key => $info) {
+                $oneTrace = self::i()->_getOneTrace($info, $addObject);
 
-            $result['#' . ($key - 1) . ' ' . $oneTrace['func']] = $oneTrace['file'];
+                $result['#' . ($key - 1) . ' ' . $oneTrace['func']] = $oneTrace['file'];
+            }
         }
 
         return $result;
@@ -3124,154 +3102,7 @@ class JBDump
             return self::i()->dump($sqlHtml, $sqlName . '::html');
         }
 
-        $tmp = htmlspecialchars((string)$query);
-        $tmp = str_replace("\r", '', $tmp);
-        $tmp = trim(str_replace("\n", "\r\n", $tmp)) . "\r\n";
-
-        $quote_list_text    = array();
-        $quote_list_symbols = array();
-
-        $k      = 0;
-        $quotes = array();
-
-        preg_match_all("/\\\'|\\\&quot;/is", $tmp, $quotes);
-        array_unique($quotes);
-        if (count($quotes)) {
-            foreach ($quotes[0] as $i) {
-                $k++;
-                $quote_list_symbols[$k] = $i;
-                $tmp                    = str_replace($i, '<symbol' . $k . '>', $tmp);
-            }
-        }
-
-        $matches = array(
-            "/(&quot;|'|`)(.*?)(\\1)/is", // test in quotes
-            "/\/\*.*?\*\//s", // text on comments
-            "/ \-\-.*\x0D\x0A/", // text ' --' comment
-            "/ #.*\x0D\x0A/", // text ' #' comment
-        );
-
-        foreach ($matches as $match) {
-            $found = array();
-            preg_match_all($match, $tmp, $found);
-            $quotes = (array)$found[0];
-            array_unique($quotes);
-            if (count($quotes)) {
-                foreach ($quotes as $i) {
-                    $k++;
-                    $quote_list_text[$k] = $i;
-                    $tmp                 = str_replace($i, '<text' . $k . '>', $tmp);
-                }
-            }
-        }
-
-        $keywords = array(
-            "avg", "as", "auto_increment", "and", "analyze", "alter",
-            "asc", "all", "after", "add", "action", "against",
-            "aes_encrypt", "aes_decrypt", "ascii", "abs", "acos",
-            "asin", "atan", "authors", "between", "btree", "backup",
-            "by", "binary", "before", "binlog", "benchmark", "blob",
-            "bigint", "bit_count", "bit_or", "bit_and", "bin",
-            "bit_length", "both", "create", "count", "comment",
-            "check", "char", "concat", "cipher", "changed", "column",
-            "columns", "change", "constraint", "cascade", "checksum",
-            "cross", "close", "concurrent", "commit", "curdate",
-            "current_date", "curtime", "current_time",
-            "current_timestamp", "cast", "convert", "connection_id",
-            "coalesce", "case", "conv", "concat_ws", "char_length",
-            "character_length", "ceiling", "cos", "cot", "crc32",
-            "compress", "delete", "drop", "default", "distinct",
-            "decimal", "date", "describe", "data", "desc",
-            "dayofmonth", "date_add", "database", "databases",
-            "double", "duplicate", "disable", "datetime", "dumpfile",
-            "distinctrow", "delayed", "dayofweek", "dayofyear",
-            "dayname", "day_minute", "date_format", "date_sub",
-            "decode", "des_encrypt", "des_decrypt", "degrees",
-            "decompress", "dec", "engine", "explain", "enum",
-            "escaped", "execute", "extended", "errors", "exists",
-            "enable", "enclosed", "extract", "encrypt", "encode",
-            "elt", "export_set", "escape", "exp", "end", "from",
-            "float", "flush", "fields", "file", "for", "fast", "full",
-            "fulltext", "first", "foreign", "force", "from_days",
-            "from_unixtime", "format", "found_rows", "floor", "field",
-            "find_in_set", "group", "grant", "grants", "global",
-            "get_lock", "greatest", "having", "high_priority",
-            "handler", "hour", "hex", "insert", "into", "inner",
-            "int", "ifnull", "if", "isnull", "in", "infile", "is",
-            "interval", "ignore", "identified", "index", "issuer",
-            "integer", "is_free_lock", "inet_ntoa", "inet_aton",
-            "instr", "join", "kill", "key", "keys", "left", "load",
-            "local", "limit", "like", "lock", "lpad", "last_insert_id",
-            "logs", "length", "longblob", "longtext", "last", "lines",
-            "low_priority", "locate", "ltrim", "leading", "lcase",
-            "lower", "load_file", "ln", "log", "least", "month", "mod",
-            "max", "min", "mediumint", "medium", "master", "modify",
-            "mediumblob", "mediumtext", "match", "mode", "monthname",
-            "mid", "minute", "master_pos_wait", "make_set", "null",
-            "not", "now", "none", "new", "numeric", "no", "natural",
-            "next", "nullif", "national", "nchar", "on", "or",
-            "optimize", "order", "optionally", "option", "outfile",
-            "open", "offset", "outer", "old_password", "ord", "oct",
-            "octet_length", "primary", "password", "privileges",
-            "process", "processlist", "purge", "partial", "procedure",
-            "prev", "period_add", "period_diff", "position", "pow",
-            "power", "pi", "quick", "quarter", "quote", "right",
-            "repair", "restore", "reset", "regexp", "references",
-            "replace", "revoke", "reload", "require", "replication",
-            "read", "rand", "rename", "real", "restrict",
-            "release_lock", "rpad", "rtrim", "repeat", "reverse",
-            "rlike", "round", "radians", "rollup", "select", "sum",
-            "set", "show", "substring", "smallint", "super", "subject",
-            "status", "slave", "session", "start", "share",
-            "straight_join", "sql_small_result", "sql_big_result",
-            "sql_buffer_result", "sql_cache", "sql_no_cache",
-            "sql_calc_found_rows", "second", "sysdate", "sec_to_time",
-            "system_user", "session_user", "substring_index", "std",
-            "stddev", "soundex", "space", "strcmp", "sign", "sqrt",
-            "sin", "straight", "sleep", "text", "truncate", "table",
-            "tinyint", "tables", "to_days", "temporary", "terminated",
-            "to", "types", "time", "timestamp", "tinytext",
-            "tinyblob", "transaction", "time_format", "time_to_sec",
-            "trim", "trailing", "tan", "then", "update", "union",
-            "using", "unsigned", "unlock", "usage", "use_frm",
-            "unix_timestamp", "unique", "use", "user", "ucase",
-            "upper", "uuid", "values", "varchar", "variables",
-            "version", "variance", "varying", "where", "with",
-            "warnings", "write", "weekday", "week", "when", "xor",
-            "year", "yearweek", "year_month", "zerofill"
-        );
-
-        $replace = Array();
-        foreach ($keywords as $keyword) {
-            $replace[] = '/\b' . $keyword . '\b/ie';
-        }
-
-        $tmp = preg_replace($replace, '"<b style=\"color:#0000FF\">".strtoupper("$0")."</b>"', $tmp);
-
-        $tmp = preg_replace('/\b([\.0-9]+)\b/', '<b style="color:#008000">\1</b>', $tmp);
-
-        $tmp = preg_replace('/([\(\)])/', '<b style="color:#FF0000">\1</b>', $tmp);
-
-        if (count($quote_list_text)) {
-            $quote_list_text = array_reverse($quote_list_text, true);
-            foreach ($quote_list_text as $k => $i) {
-                $tmp = str_replace('<text' . $k . '>', '<span style="color:#777;">' . $i . '</span>', $tmp);
-            }
-        }
-
-        if (count($quote_list_symbols)) {
-            $quote_list_symbols = array_reverse($quote_list_symbols, true);
-            foreach ($quote_list_symbols as $k => $i) {
-                $tmp = str_replace('<symbol' . $k . '>', $i, $tmp);
-            }
-        }
-
-        $sqlHtml = trim($tmp);
-        if ($nl2br) {
-            $sqlHtml = nl2br($sqlHtml);
-        }
-
-        return self::i()->dump($sqlHtml, $sqlName . '::html');
+        return self::i()->dump($query, $sqlName . '::html');
     }
 
     /**
