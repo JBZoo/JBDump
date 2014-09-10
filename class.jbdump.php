@@ -1853,15 +1853,17 @@ class JBDump
             $data = '<pre class="jbpreview">' . $data . '</pre>';
 
         } elseif ($advType == 'source') {
-            $_extra = true;
-            $_      = 'PHP Code';
-
+            
             $data = trim($data);
-            if (strpos($data, '<?') !== 0) {
-                $data = "<?php\n" . $data;
+            if ($data && strpos($data, '<?') !== 0) {
+                $_      = 'PHP Code';
+                $_extra = true;
+                $data   = "<?php\n\n" . $data;
+                $data   = '<pre class="jbpreview">' . highlight_string($data, true) . '</pre>';
+            } else {
+                $_    = '// code not found';
+                $data = null;
             }
-
-            $data = '<pre class="jbpreview">' . highlight_string($data, true) . '</pre>';
             
         } else {
             $_ = $data;
