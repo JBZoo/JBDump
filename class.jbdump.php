@@ -2172,7 +2172,7 @@ class JBDump
                 .jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;font-family:Verdana, Arial, Helvetica;margin:0;padding:0;color:#333;}
                 .jbdump li{list-style:none !important;}
                 .jbdump .jbnode .jbnode{margin-left:20px;}
-                .jbdump .jbnode .jbpreview{white-space:nowrap;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;text-align:left !important;width:97%;color:#333;min-width:300px;}
+                .jbdump .jbnode .jbpreview{overflow-wrap:normal;flex-direction:row;display:block;word-wrap:normal;white-space:pre;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;text-align:left !important;width:97%;color:#333;min-width:300px;}
                 .jbdump .jbchild{overflow:hidden;}
                 .jbdump .jbvalue{font-weight:bold;font-family:Tahoma, Verdana, Arial, Helvetica;font-size:12px;}
                 .jbdump .jbfooter{border-top:1px dotted #ccc;padding-top:4px;}
@@ -4238,7 +4238,7 @@ function jbdump($var = 'JBDump::variable is no set', $isDie = true, $name = '...
 
         if ($_this->isDebug()) {
             $_this->dump($var, $name);
-            $isDie && die('JBDump_die');
+            $isDie && die('JBDump_auto_die');
         }
 
     }
