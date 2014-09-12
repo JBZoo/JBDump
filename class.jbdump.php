@@ -264,6 +264,63 @@ class JBDump
     }
 
     /**
+     * Include css and js files in document
+     * @param bool $force
+     * @return void
+     */
+    protected function _initAssets($force = true)
+    {
+        static $loaded;
+        if (!isset($loaded) || $force) {
+            $loaded = true;
+            
+            echo
+            '<script type="text/javascript">
+                function jbdump() {}
+                jbdump.reclass = function (el, className) {if (el.className.indexOf(className) < 0) {el.className += " " + className;}};
+                jbdump.unclass = function (el, className) {if (el.className.indexOf(className) > -1) {el.className = el.className.replace(" " + className, "");}};
+                jbdump.toggle = function (el) {var ul = el.parentNode.getElementsByTagName("ul");for (var i = 0; i < ul.length; i++) {
+                if (ul[i].parentNode.parentNode == el.parentNode) {ul[i].parentNode.style.display = ul[i].parentNode.style.display == "none" ? "block" : "none";}}
+                if (ul[0].parentNode.style.display == "block") {jbdump.reclass(el, "jbopened");} else {jbdump.unclass(el, "jbopened");}};
+            </script>
+            <style>
+                #jbdump{border:solid 1px #333;border-radius:6px;position:relative;z-index:10101;min-width:400px;margin:6px;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;}
+                #jbdump ::selection {background: #89cac9;color: #333;text-shadow: none;}
+                #jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;font-family:Verdana, Arial, Helvetica;margin:0;padding:0;color:#333;}
+                #jbdump li{list-style:none !important;}
+                #jbdump .jbnode{margin: 0;padding: 0;}
+                #jbdump .jbchild{margin: 0;padding: 0;}
+                #jbdump .jbnode .jbnode{margin-left:20px;}
+                #jbdump .jbnode .jbpreview{overflow-wrap:normal;flex-direction:row;display:block;word-wrap:normal;white-space:pre;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;text-align:left !important;width:97%;color:#333;min-width:300px;}
+                #jbdump .jbchild{overflow:hidden;}
+                #jbdump .jbvalue{font-weight:bold;font-family:Tahoma, Verdana, Arial, Helvetica;font-size:12px;}
+                #jbdump .jbfooter{border-top:1px dotted #ccc;padding-top:4px;}
+                #jbdump .jbfooter .jbversion{float:right;}
+                #jbdump .jbfooter .jbversion a{color:#ddd;font-size:10px !important;text-decoration:none;}
+                #jbdump .jbfooter .jbversion a:hover{color:#333;text-decoration:underline;}
+                #jbdump .jbfooter .jbpath{font-family:"Courier New";}
+                #jbdump .jbelement{padding:3px 3px 3px 20px;background-repeat:no-repeat;background-color:#fff;background-position:5px 6px;background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP////8AAICAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQSEAAhq6VWUpx3n+AVVl42ilkEADs=\');}
+                #jbdump .jbelement:hover{background-color:#c6e5ff;}
+                #jbdump .jbelement.jbexpand{background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQTEIAna33USpwt79vncRpZgpcGRAA7\');cursor:pointer;}
+                #jbdump .jbelement.jbexpand.jbopened{background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQQEMhJ63w4Z6C37JUXWmQJRAA7\');}
+                #jbdump .jbelement .jbname{color:#a00;font-weight:bold;}
+                #jbdump .jbelement .jbtype-integer{color:#00d;}
+                #jbdump .jbelement .jbtype-float{color:#099;}
+                #jbdump .jbelement .jbtype-boolean{color:#990;}
+                #jbdump .jbelement .jbtype-string{color:#090;}
+                #jbdump .jbelement .jbtype-array{color:#990;}
+                #jbdump .jbelement .jbtype-null{color:#999;}
+                #jbdump .jbelement .jbtype-max-depth{color:#900;}
+                #jbdump .jbelement .jbtype-object{color:#c0c;}
+                #jbdump .jbelement .jbtype-closure{color:#c0c;}
+                #jbdump_profile_chart_table td img{height:12px !important;}
+                #jbdump_profile_chart_table{color:#333 !important;}
+                .google-visualization-table-table td img{height:12px !important;}
+            </style>';
+        }
+    }    
+    
+    /**
      * Check permissions for show all debug messages
      *  - check ip, it if set in config
      *  - check requestParam, if it set in config
@@ -1503,7 +1560,7 @@ class JBDump
         $text = $this->_getSourceFunction($this->_trace);
         $path = $this->_getSourcePath($this->_trace);
         ?>
-        <div class="jbdump">
+        <div id="jbdump">
             <ul class="jbnode">
                 <?php $this->_dump($data, $varname); ?>
                 <li class="jbfooter">
@@ -2146,61 +2203,6 @@ class JBDump
         }
 
         return sprintf('%.2f ' . $symbol[$exp], $value);
-    }
-
-    /**
-     * Include css and js files in document
-     * @param bool $force
-     * @return void
-     */
-    protected function _initAssets($force = true)
-    {
-        static $loaded;
-        if (!isset($loaded) || $force) {
-            $loaded = true;
-            
-            echo
-            '<script type="text/javascript">
-                function jbdump() {}
-                jbdump.reclass = function (el, className) {if (el.className.indexOf(className) < 0) {el.className += " " + className;}};
-                jbdump.unclass = function (el, className) {if (el.className.indexOf(className) > -1) {el.className = el.className.replace(" " + className, "");}};
-                jbdump.toggle = function (el) {var ul = el.parentNode.getElementsByTagName("ul");for (var i = 0; i < ul.length; i++) {
-                if (ul[i].parentNode.parentNode == el.parentNode) {ul[i].parentNode.style.display = ul[i].parentNode.style.display == "none" ? "block" : "none";}}
-                if (ul[0].parentNode.style.display == "block") {jbdump.reclass(el, "jbopened");} else {jbdump.unclass(el, "jbopened");}};
-            </script>
-            <style>
-                .jbdump{border:solid 1px #333;-webkit-border-radius:6px;-khtml-border-radius:6px;-moz-border-radius:6px;border-radius:6px;position:relative;z-index:10101;min-width:400px;margin:6px;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;}
-                .jbdump ::selection {background: #89cac9;color: #333;text-shadow: none;}
-                .jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;font-family:Verdana, Arial, Helvetica;margin:0;padding:0;color:#333;}
-                .jbdump li{list-style:none !important;}
-                .jbdump .jbnode .jbnode{margin-left:20px;}
-                .jbdump .jbnode .jbpreview{overflow-wrap:normal;flex-direction:row;display:block;word-wrap:normal;white-space:pre;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;text-align:left !important;width:97%;color:#333;min-width:300px;}
-                .jbdump .jbchild{overflow:hidden;}
-                .jbdump .jbvalue{font-weight:bold;font-family:Tahoma, Verdana, Arial, Helvetica;font-size:12px;}
-                .jbdump .jbfooter{border-top:1px dotted #ccc;padding-top:4px;}
-                .jbdump .jbfooter .jbversion{float:right;}
-                .jbdump .jbfooter .jbversion a{color:#ddd;font-size:10px !important;text-decoration:none;}
-                .jbdump .jbfooter .jbversion a:hover{color:#333;text-decoration:underline;}
-                .jbdump .jbfooter .jbpath{font-family:"Courier New";}
-                .jbdump .jbelement{padding:3px 3px 3px 20px;background-repeat:no-repeat;background-color:#fff;background-position:5px 6px;background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP////8AAICAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQSEAAhq6VWUpx3n+AVVl42ilkEADs=\');}
-                .jbdump .jbelement:hover{background-color:#c6e5ff;}
-                .jbdump .jbelement.jbexpand{background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQTEIAna33USpwt79vncRpZgpcGRAA7\');cursor:pointer;}
-                .jbdump .jbelement.jbexpand.jbopened{background-image:url(\'data:image/gif;base64,R0lGODlhCQAJALMAAP///wAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAJAAkAAAQQEMhJ63w4Z6C37JUXWmQJRAA7\');}
-                .jbdump .jbelement .jbname{color:#a00;font-weight:bold;}
-                .jbdump .jbelement .jbtype-integer{color:#00d;}
-                .jbdump .jbelement .jbtype-float{color:#099;}
-                .jbdump .jbelement .jbtype-boolean{color:#990;}
-                .jbdump .jbelement .jbtype-string{color:#090;}
-                .jbdump .jbelement .jbtype-array{color:#990;}
-                .jbdump .jbelement .jbtype-null{color:#999;}
-                .jbdump .jbelement .jbtype-max-depth{color:#900;}
-                .jbdump .jbelement .jbtype-object{color:#c0c;}
-                .jbdump .jbelement .jbtype-closure{color:#c0c;}
-                #jbdump_profile_chart_table td img{height:12px !important;}
-                #jbdump_profile_chart_table{color:#333 !important;}
-                .google-visualization-table-table td img{height:12px !important;}
-            </style>';
-        }
     }
 
     /**
