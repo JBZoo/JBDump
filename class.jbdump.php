@@ -4211,7 +4211,7 @@ class JBDump_SqlFormatter
                 return $string;
             }
 
-            return '<pre ' . self::$pre_attributes . '>' . $string . '</pre>';
+            return $string;
         }
     }
 
