@@ -2,7 +2,7 @@
     "name": "smetdenis/jbdump",
     "type": "library",
     "description": "Script for debug and dump PHP variables and other stuff. This tool is a nice replacement for print_r() and var_dump() functions.",
-    "license": "GNU/GPL",
+    "license": "GPL",
     "keywords": ["jbdump", "dump", "php", "dumper", "debug", "debugging", "pretty", "print", "print_r", "var_dump", "krumo", "vars"],
     "authors": [
         {
