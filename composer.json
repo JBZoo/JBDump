@@ -1,7 +1,7 @@
 {
     "name": "smetdenis/jbdump",
     "type": "library",
-    "description": "Script for debug and dump PHP variables and other stuff. This tool is a nice replacement for print_r() and var_dump() functions."
+    "description": "Script for debug and dump PHP variables and other stuff. This tool is a nice replacement for print_r() and var_dump() functions.",
     "license": "GNU/GPL",
     "keywords": ["jbdump", "dump", "php", "dumper", "debug", "debugging", "pretty", "print", "print_r", "var_dump", "krumo", "vars"],
     "authors": [
@@ -10,17 +10,17 @@
             "email": "admin@jbzoo.com"
         },        
         {
-    	    "name": "Kaloyan K. Tsvetkov",
-    	    "email": "kaloyan@kaloyan.info"
-    	},
+            "name": "Kaloyan K. Tsvetkov",
+            "email": "kaloyan@kaloyan.info"
+        },
         {
-    	    "name": "Jeremy Dorn",
-    	    "email": "jeremy@jeremydorn.com"
-    	},
+            "name": "Jeremy Dorn",
+            "email": "jeremy@jeremydorn.com"
+        },
         {
-    	    "name": "Florin Patan",
-    	    "email": "florinpatan@gmail.com"
-    	}
+            "name": "Florin Patan",
+            "email": "florinpatan@gmail.com"
+        }
     ],
     "require": {
         "php": ">=5.3.10"
