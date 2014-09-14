@@ -12,6 +12,14 @@
         {
     	    "name": "Kaloyan K. Tsvetkov",
     	    "email": "kaloyan@kaloyan.info"
+    	},
+        {
+    	    "name": "Jeremy Dorn",
+    	    "email": "jeremy@jeremydorn.com"
+    	},
+        {
+    	    "name": "Florin Patan",
+    	    "email": "florinpatan@gmail.com"
     	}
     ],
     "require": {
@@ -21,4 +29,3 @@
         "files": ["class.jbdump.php"]
     }
 }
-
