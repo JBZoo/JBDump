@@ -286,14 +286,15 @@ class JBDump
             <style>
                 #jbdump{border:solid 1px #333;border-radius:6px;position:relative;z-index:10101;min-width:400px;margin:6px;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;}
                 #jbdump ::selection {background: #89cac9;color: #333;text-shadow: none;}
-                #jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;font-family:Verdana, Arial, Helvetica;margin:0;padding:0;color:#333;}
+                #jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px!important;font-family:monospace, Verdana, Helvetica;margin:0;padding:0;color:#333;}
                 #jbdump li{list-style:none !important;}
                 #jbdump .jbnode{margin: 0;padding: 0;}
                 #jbdump .jbchild{margin: 0;padding: 0;}
                 #jbdump .jbnode .jbnode{margin-left:20px;}
-                #jbdump .jbnode .jbpreview{overflow-wrap:normal;flex-direction:row;display:block;word-wrap:normal;white-space:pre;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;text-align:left !important;width:97%;color:#333;min-width:300px;}
+                #jbdump .jbnode .jbpreview{font-family:"Courier New";font-size:12px!important;overflow-wrap:normal;flex-direction:row;display:block;word-wrap:normal;white-space:pre;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;text-align:left !important;width:97%;color:#333;min-width:300px;}
+                #jbdump .jbnode .jbpreview * {font-family:"Courier New";font-size:12px!important;}
                 #jbdump .jbchild{overflow:hidden;}
-                #jbdump .jbvalue{font-weight:bold;font-family:Tahoma, Verdana, Arial, Helvetica;font-size:12px;}
+                #jbdump .jbvalue{font-weight:bold;font-family:monospace, Verdana, Helvetica;font-size:12px;}
                 #jbdump .jbfooter{border-top:1px dotted #ccc;padding-top:4px;}
                 #jbdump .jbfooter .jbversion{float:right;}
                 #jbdump .jbfooter .jbversion a{color:#ddd;font-size:10px !important;text-decoration:none;}
