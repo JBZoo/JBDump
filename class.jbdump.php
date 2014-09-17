@@ -16,7 +16,7 @@
  *      if (file_exists( dirname(__FILE__) . '/class.jbdump.php')) { require_once dirname(__FILE__) . '/class.jbdump.php'; }
  *
  * @package     JBDump
- * @version     1.4.0
+ * @version     1.4.1
  * @copyright   Copyright (c) 2009-2014 JBDump.org
  * @license     http://www.gnu.org/licenses/gpl.html GNU/GPL
  * @author      SmetDenis <admin@JBDump.org>
@@ -113,7 +113,7 @@ class JBDump
      * Library version
      * @var string
      */
-    const VERSION = '1.4.0';
+    const VERSION = '1.4.1';
 
     /**
      * Library version
@@ -1726,7 +1726,7 @@ class JBDump
         $advType = false;
         if ($varType == 'string' && preg_match('#(.*)::(.*)#', $name, $matches)) {
             $matches[2] = trim(strToLower($matches[2]));
-            if (strlen($matches[2]) > 0) {
+            if ($this->_strlen($matches[2]) > 0) {
                 $advType = $matches[2];
             }
             $name = $matches[1];
@@ -1893,6 +1893,17 @@ class JBDump
     }
 
     /**
+     * Get valid string length
+     * @param   string $string Some string
+     * @return  int
+     */
+    protected function _strlen($string)
+    {
+        $encoding = function_exists('mb_detect_encoding') ? mb_detect_encoding($string) : false;
+        return $encoding ? mb_strlen($string, $encoding) : strlen($string);
+    }    
+    
+    /**
      * Render HTML for string type
      * @param   string $data Variable
      * @param   string $name Variable name
@@ -1901,7 +1912,7 @@ class JBDump
      */
     protected function _string($data, $name, $advType = '')
     {
-        $dataLength = strlen($data);
+        $dataLength = $this->_strlen($data);
 
         $_extra = false;
         if ($advType == 'html') {
@@ -1937,8 +1948,8 @@ class JBDump
                 $_extra = false;
             }
 
-            if (strlen($data)) {
-                if (strLen($data) > self::$_config['dump']['stringLength']) {
+            if ($this->_strlen($data)) {
+                if ($this->_strlen($data) > self::$_config['dump']['stringLength']) {
                     if (function_exists('mb_substr')) {
                         $_ = mb_substr($data, 0, self::$_config['dump']['stringLength'] - 3) . '...';
                     } else {
@@ -2273,7 +2284,7 @@ class JBDump
     {
         // current filename info
         $curFile       = pathinfo(__FILE__, PATHINFO_BASENAME);
-        $curFileLength = strlen($curFile);
+        $curFileLength = $this->_strlen($curFile);
 
         $meta = array();
         $j    = 0;
