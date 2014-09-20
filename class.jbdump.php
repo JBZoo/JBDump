@@ -1731,6 +1731,10 @@ class JBDump
             }
             $name = $matches[1];
         }
+        
+        if ($this->_strlen($name) > 32) {
+            $name = substr($name, 0, 32) . '...';
+        }
 
         if ($varType == 'null') {
             $this->_null($name);
