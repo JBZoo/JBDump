@@ -1732,8 +1732,8 @@ class JBDump
             $name = $matches[1];
         }
         
-        if ($this->_strlen($name) > 32) {
-            $name = substr($name, 0, 32) . '...';
+        if ($this->_strlen($name) > 80) {
+            $name = substr($name, 0, 80) . '...';
         }
 
         if ($varType == 'null') {
@@ -3278,7 +3278,7 @@ class JBDump_SqlFormatter
     public static $error_attributes = 'style="background-color: red;"';
     public static $comment_attributes = 'style="color: #aaa;"';
     public static $variable_attributes = 'style="color: orange;"';
-    public static $pre_attributes = 'style="color: black; background-color: white;"';
+    public static $pre_attributes = '';
 
     // Boolean - whether or not the current environment is the CLI
     // This affects the type of syntax highlighting
