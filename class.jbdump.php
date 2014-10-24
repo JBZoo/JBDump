@@ -291,7 +291,7 @@ class JBDump
                 #jbdump .jbnode{margin: 0;padding: 0;}
                 #jbdump .jbchild{margin: 0;padding: 0;}
                 #jbdump .jbnode .jbnode{margin-left:20px;}
-                #jbdump .jbnode .jbpreview{font-family:"Courier New";font-size:12px!important;overflow-wrap:normal;flex-direction:row;display:block;word-wrap:normal;white-space:pre;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;text-align:left !important;width:97%;color:#333;min-width:300px;}
+                #jbdump .jbnode .jbpreview{font-family:"Courier New";font-size:12px!important;overflow-wrap:normal;flex-direction:row;display:block;word-wrap:normal;white-space:pre;background:#f9f9b5;border:solid 1px #808000;border-radius:6px;overflow:auto;margin:12px 0;padding:6px;min-height:58px;height:300px;text-align:left !important;width:97%;color:#333;min-width:300px;}
                 #jbdump .jbnode .jbpreview * {font-family:"Courier New";font-size:12px!important;}
                 #jbdump .jbchild{overflow:hidden;}
                 #jbdump .jbvalue{font-weight:bold;font-family:monospace, Verdana, Helvetica;font-size:12px;}
@@ -2773,7 +2773,12 @@ class JBDump
             foreach ($trace as $key => $info) {
                 $oneTrace = self::i()->_getOneTrace($info, $addObject);
 
-                $result['#' . ($key - 1) . ' ' . $oneTrace['func']] = $oneTrace['file'];
+                $file = 'undefined';
+                if (isset($oneTrace['file'])) {
+                    $file = $oneTrace['file'];
+                }
+                
+                $result['#' . ($key - 1) . ' ' . $oneTrace['func']] = $file;
             }
         }
 
