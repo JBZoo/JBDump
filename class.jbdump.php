@@ -284,7 +284,7 @@ class JBDump
                 if (ul[0].parentNode.style.display == "block") {jbdump.reclass(el, "jbopened");} else {jbdump.unclass(el, "jbopened");}};
             </script>
             <style>
-                #jbdump{border:solid 1px #333;border-radius:6px;position:relative;z-index:10101;min-width:400px;margin:6px;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;}
+                #jbdump{border:solid 1px #333;border-radius:6px;position:relative;z-index:10101;min-width:400px;max-width:1280px;margin:6px auto;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;}
                 #jbdump ::selection {background: #89cac9;color: #333;text-shadow: none;}
                 #jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px!important;font-family:monospace, Verdana, Helvetica;margin:0;padding:0;color:#333;}
                 #jbdump li{list-style:none !important;}
@@ -652,14 +652,17 @@ class JBDump
      * Show current usage memory in filesize format
      * @return  JBDump
      */
-    public static function memory()
+    public static function memory($formated = true)
     {
         if (!self::isDebug()) {
             return false;
         }
 
         $memory = self::i()->_getMemory();
-        $memory = self::i()->_formatSize($memory);
+        if ($formated) {
+            $memory = self::i()->_formatSize($memory);
+        }
+
         return self::i()->dump($memory, '! memory !');
     }
 
@@ -1420,7 +1423,7 @@ class JBDump
                 data.setCell(<?php echo $key;?>, 3, <?php echo self::_profilerFormatTime($mark['time']);?>);
                 data.setCell(<?php echo $key;?>, 4, <?php echo self::_profilerFormatTime($mark['timeDiff']);?>);
                 data.setCell(<?php echo $key;?>, 5, <?php echo self::_profilerFormatMemory($mark['memory']);?>);
-                data.setCell(<?php echo $key;?>, 6, <?php echo self::_profilerFormatMemory($mark['memoryDiff']);?>);
+                data.setCell(<?php echo $key;?>, 6, "<?php echo self::_profilerFormatMemory($mark['memoryDiff']);?>");
                 <?php
             } ?>
 
@@ -1859,7 +1862,7 @@ class JBDump
     protected function _boolean($data, $name)
     {
         $data = $data ? 'TRUE' : 'FALSE';
-        $this->_renderNode('Boolean', $name, $data);
+        $this->_renderNode('Boolean', $name, '<span style="color:00e;">' . $data . '</span>');
     }
 
     /**
