@@ -1068,14 +1068,14 @@ class JBDump
         ob_start();
         var_dump($var);
         $output = ob_get_clean();
+        $_this = self::i();
 
         // neaten the newlines and indents
         $output = preg_replace("/\]\=\>\n(\s+)/m", "] => ", $output);
         if (!extension_loaded('xdebug')) {
-            $output = htmlspecialchars($output, ENT_QUOTES);
+            $output = $_this->_htmlChars($output);
         }
 
-        $_this = self::i();
         $_this->_dumpRenderHtml($output, $varname . '::html', $params);
 
         return $_this;
@@ -1287,6 +1287,26 @@ class JBDump
                 }
             }
         }
+    }
+
+    /**
+     * @param string $data
+     * @return string
+     */
+    protected function _htmlChars($data)
+    {
+        /*
+         * // experimental
+        if (function_exists('mb_detect_encoding')) {
+            $encoding = mb_detect_encoding($data);
+            if ($encoding == 'ASCII') {
+                $encoding = 'cp1251';
+            }
+        }
+        */
+        $encoding = 'UTF-8';
+
+        return htmlSpecialChars((string)$data, ENT_QUOTES | ENT_XML1 | ENT_SUBSTITUTE, $encoding, true);
     }
 
     /**
@@ -1595,7 +1615,7 @@ class JBDump
         }
 
         $printrOut = print_r($data, true);
-        $printrOut = htmlspecialchars($printrOut);
+        $printrOut = $this->_htmlChars($printrOut);
 
         if (self::isAjax()) {
             $printrOut = str_replace('] =&gt;', '] =>', $printrOut);
@@ -1966,8 +1986,8 @@ class JBDump
                     $_extra = true;
                 }
 
-                $_ = htmlSpecialChars($_);
-                $data = '<textarea readonly="readonly" class="jbpreview">' . htmlSpecialChars($data) . '</textarea>';
+                $_    = $this->_htmlChars($_);
+                $data = '<textarea readonly="readonly" class="jbpreview">' . $this->_htmlChars($data) . '</textarea>';
             }
         }
         ?>
@@ -2879,7 +2899,7 @@ class JBDump
             $this->_dumpRenderLite($errorInfo, '* ' . $errType[$errNo]);
 
         } else {
-            $desc = '<b style="color:red;">*</b> ' . $errType[$errNo] . ' / ' . htmlSpecialChars($result['message']);
+            $desc = '<b style="color:red;">*</b> ' . $errType[$errNo] . ' / ' . $this->_htmlChars($result['message']);
             $this->dump($result, $desc);
         }
 
@@ -2903,11 +2923,11 @@ class JBDump
         $result['code']   = $exception->getCode();
 
         if ($this->_isLiteMode()) {
-            $this->_dumpRenderLite("\n" . $result['string'], '** EXCEPTION / ' . htmlSpecialChars($result['message']));
+            $this->_dumpRenderLite("\n" . $result['string'], '** EXCEPTION / ' . $this->_htmlChars($result['message']));
 
         } else {
             $this->_initAssets(true);
-            $this->dump($result, '<b style="color:red;">**</b> EXCEPTION / ' . htmlSpecialChars($result['message']));
+            $this->dump($result, '<b style="color:red;">**</b> EXCEPTION / ' . $this->_htmlChars($result['message']));
         }
 
         return true;
