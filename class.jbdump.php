@@ -1028,7 +1028,7 @@ class JBDump
         self::$counters[$outputMode][$name]++;
 
         if ($outputMode == 1) {
-            echo '<pre>' . self::$counters[$outputMode][$name] . '</pre>';
+            echo '<pre>' . $name . ' = ' . self::$counters[$outputMode][$name] . '</pre>';
         }
 
     }
@@ -4397,7 +4397,7 @@ class JBDump_array2php
 
         $string = 'array( ' . self::LE;
         if ($isObject) {
-            $string = '(object)array( /* Object: "' . $isObject . '" */ ' . self::LE;
+            $string = '(object)array( ' . self::LE . $this->_getIndent($depth + 1) .'/* Object: "' . $isObject . '" */ ' . self::LE;
         }
 
         $depth++;
