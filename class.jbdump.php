@@ -3,7 +3,6 @@
  * Library for dump variables and profiling PHP code
  * The idea and the look was taken from Krumo project
  * PHP version 5.3 or higher
- *
  * Example:<br/>
  *      jbdump($myLoveVariable);<br/>
  *      jbdump($myLoveVariable, false, 'Var name');<br/>
@@ -11,15 +10,13 @@
  *      jbdump::log('Message to log file');<br/>
  *      jbdump::i()->dump($myLoveVariable);<br/>
  *      jbdump::i()->post()->get()->mark('Profiler mark');<br/>
- *
  * Simple include in project on index.php file
- *      if (file_exists( dirname(__FILE__) . '/class.jbdump.php')) { require_once dirname(__FILE__) . '/class.jbdump.php'; }
- *
+ * if (file_exists( dirname(__FILE__) . '/class.jbdump.php')) { require_once dirname(__FILE__) . '/class.jbdump.php'; }
  * @package     JBDump
  * @version     1.4.1
  * @copyright   Copyright (c) 2009-2014 JBDump.org
  * @license     http://www.gnu.org/licenses/gpl.html GNU/GPL
- * @author      SmetDenis <admin@JBDump.org>
+ * @author      SmetDenis <admin@JBDump.org>, <admin@jbzoo.com>
  * @link        http://joomla-book.ru/projects/jbdump
  * @link        http://JBDump.org/
  * @link        http://code.google.com/intl/ru-RU/apis/chart/index.html
@@ -94,12 +91,12 @@ class JBDump
 
         // // // dump config
         'dump'     => array(
-            'render'         => 'html', // (lite|log|mail|print_r|var_dump|html)
-            'stringLength'   => 80, // cutting long string
-            'maxDepth'       => 4, // the maximum depth of the dump
-            'showMethods'    => true, // show object methods
-            'die'            => false, // die after dumping variable
-            'expandLevel'    => 1, // expand the list to the specified depth
+            'render'       => 'html', // (lite|log|mail|print_r|var_dump|html)
+            'stringLength' => 80, // cutting long string
+            'maxDepth'     => 4, // the maximum depth of the dump
+            'showMethods'  => true, // show object methods
+            'die'          => false, // die after dumping variable
+            'expandLevel'  => 1, // expand the list to the specified depth
         ),
     );
 
@@ -448,7 +445,7 @@ class JBDump
 
     /**
      * Set debug parameters
-     * @param array $data Params for debug, see self::$_config vars
+     * @param array  $data Params for debug, see self::$_config vars
      * @param string $section
      * @return JBDump
      */
@@ -543,9 +540,9 @@ class JBDump
 
     /**
      * Add message to log file
-     * @param   mixed $entry Text to log file
+     * @param   mixed  $entry    Text to log file
      * @param   string $markName Name of log record
-     * @param   array $params Additional params
+     * @param   array  $params   Additional params
      * @return  JBDump
      */
     public static function log($entry, $markName = '...', $params = array())
@@ -702,7 +699,7 @@ class JBDump
 
     /**
      * Parse url
-     * @param   string $url URL string
+     * @param   string $url     URL string
      * @param   string $varname URL name
      * @return  JBDump
      */
@@ -842,7 +839,7 @@ class JBDump
     /**
      * Show php.ini content (PHP API)
      * @param   string $extension Extension name
-     * @param   bool $details Retrieve details settings or only the current value for each setting
+     * @param   bool   $details   Retrieve details settings or only the current value for each setting
      * @return  bool|JBDump
      */
     public static function conf($extension = '', $details = true)
@@ -939,7 +936,7 @@ class JBDump
 
     /**
      * Convert JSON format to human readability
-     * @param $json
+     * @param        $json
      * @param string $name
      * @return bool|JBDump
      */
@@ -1019,7 +1016,8 @@ class JBDump
      *      1 - immediately
      * @param string $name
      */
-    public static function inc($outputMode = 0, $name = 'default') {
+    public static function inc($outputMode = 0, $name = 'default')
+    {
 
         if (!isset(self::$counters[$outputMode][$name])) {
             self::$counters[$outputMode][$name] = 0;
@@ -1031,6 +1029,115 @@ class JBDump
             echo '<pre>' . $name . ' = ' . self::$counters[$outputMode][$name] . '</pre>';
         }
 
+    }
+
+    /**
+     * @param string $url
+     * @param array  $data
+     * @param string $method
+     * @param array  $params
+     */
+    public static function loadUrl($url, $data = array(), $method = 'get', $params = array())
+    {
+        $result = array(
+            'lib'     => '',
+            'code'    => 0,
+            'headers' => array(),
+            'body'    => null,
+            'error'   => null,
+            'info'    => null,
+        );
+
+        $method    = trim(strtolower($method));
+        $queryData = http_build_query((array)$data, null, '&');
+        if ($method == 'get') {
+            $url = $url . (strpos($url, '?') === false ? '?' : '&') . $queryData;
+        }
+
+        if (function_exists('curl_init') && is_callable('curl_init')) {
+            $result['lib'] = 'cUrl';
+
+            $options = array(
+                CURLOPT_URL            => $url,
+                CURLOPT_RETURNTRANSFER => true,     // return web page
+                CURLOPT_HEADER         => true,     // return headers
+                CURLOPT_ENCODING       => "",       // handle all encodings
+                CURLOPT_USERAGENT      => "JBDump", // who am i
+                CURLOPT_AUTOREFERER    => true,     // set referer on redirect
+                CURLOPT_CONNECTTIMEOUT => 120,      // timeout on connect
+                CURLOPT_TIMEOUT        => 120,      // timeout on response
+                CURLOPT_MAXREDIRS      => 20,       // stop after 10 redirects
+
+                // Disabled SSL Cert checks
+                CURLOPT_SSL_VERIFYPEER => isset($params['ssl']) ? $params['ssl'] : true,
+
+                CURLOPT_HTTPHEADER     => array(
+                    'Expect:', // http://the-stickman.com/web-development/php-and-curl-disabling-100-continue-header/
+                    'Content-Type:application/x-www-form-urlencoded; charset=utf-8',
+                ),
+            );
+            if (isset($params['cert'])) {
+                $options[CURLOPT_CAINFO] = __DIR__ . '/jbdump.pem';
+            }
+
+            if (!ini_get('safe_mode') && !ini_get('open_basedir')) {
+                $options[CURLOPT_FOLLOWLOCATION] = true;
+            }
+
+            if ($method == 'post') {
+                $options[CURLOPT_POSTFIELDS] = $queryData;
+                $options[CURLOPT_POST]       = true;
+            }
+
+            $ch = curl_init($url);
+            curl_setopt_array($ch, $options);
+            $result['full'] = curl_exec($ch);
+
+            if (curl_errno($ch) || curl_error($ch)) {
+                $result['error'] = '#' . curl_errno($ch) . ' - "' . curl_error($ch) . '"';
+            }
+
+            $info = curl_getinfo($ch);
+            curl_close($ch);
+
+            // parse response
+            $redirects      = isset($info['redirect_count']) ? $info['redirect_count'] : 0;
+            $response       = explode("\r\n\r\n", $result['full'], 2 + $redirects);
+            $result['body'] = array_pop($response);
+            $headers        = explode("\r\n", array_pop($response));
+            // code
+            preg_match('/[0-9]{3}/', array_shift($headers), $matches);
+            $result['code'] = count($matches) ? $matches[0] : null;
+
+            // parse headers
+            $resHeaders = array();
+            foreach ($headers as $header) {
+                $pos   = strpos($header, ':');
+                $name  = trim(substr($header, 0, $pos));
+                $value = trim(substr($header, ($pos + 1)));
+
+                $resHeaders[$name] = $value;
+            }
+
+            $result['info']    = $info;
+            $result['headers'] = $resHeaders;
+
+        } else {
+            $result['lib'] = 'file_get_contents';
+
+            $context = null;
+            if ($method == 'post') {
+                $context  = stream_context_create(array('http' => array(
+                    'method'  => 'POST',
+                    'header'  => 'Content-type: application/x-www-form-urlencoded',
+                    'content' => $queryData
+                )));
+            }
+
+            $result['full'] = file_get_contents($url, false, $context);
+        }
+
+        return self::i()->dump($result, 'Load URL');
     }
 
     /**
@@ -1073,9 +1180,9 @@ class JBDump
 
     /**
      * Wrapper for PHP print_r function
-     * @param mixed $var The variable to dump
+     * @param mixed  $var     The variable to dump
      * @param string $varname Label to prepend to output
-     * @param array $params Echo output if true
+     * @param array  $params  Echo output if true
      * @return bool|JBDump
      */
     public static function print_r($var, $varname = '...', $params = array())
@@ -1114,9 +1221,9 @@ class JBDump
 
     /**
      * Wrapper for PHP var_dump function
-     * @param   mixed $var The variable to dump
+     * @param   mixed  $var     The variable to dump
      * @param   string $varname Echo output if true
-     * @param   array $params Additionls params
+     * @param   array  $params  Additionls params
      * @return bool|JBDump
      */
     public static function var_dump($var, $varname = '...', $params = array())
@@ -1129,7 +1236,7 @@ class JBDump
         ob_start();
         var_dump($var);
         $output = ob_get_clean();
-        $_this = self::i();
+        $_this  = self::i();
 
         // neaten the newlines and indents
         $output = preg_replace("/\]\=\>\n(\s+)/m", "] => ", $output);
@@ -1144,7 +1251,7 @@ class JBDump
 
     /**
      * Get system backtrace in formated view
-     * @param   bool $trace Custom php backtrace
+     * @param   bool $trace     Custom php backtrace
      * @param   bool $addObject Show objects in result
      * @return  JBDump
      */
@@ -1583,9 +1690,9 @@ class JBDump
 
     /**
      * Dumper variable
-     * @param   mixed $data Mixed data for dump
+     * @param   mixed  $data    Mixed data for dump
      * @param   string $varname Variable name
-     * @param   array $params Additional params
+     * @param   array  $params  Additional params
      * @return  JBDump
      */
     public static function dump($data, $varname = '...', $params = array())
@@ -1627,9 +1734,9 @@ class JBDump
 
     /**
      * Dump render - HTML
-     * @param mixed $data
+     * @param mixed  $data
      * @param string $varname
-     * @param array $params
+     * @param array  $params
      */
     protected function _dumpRenderHtml($data, $varname = '...', $params = array())
     {
@@ -1663,9 +1770,9 @@ class JBDump
 
     /**
      * Dump render - Lite mode
-     * @param mixed $data
+     * @param mixed  $data
      * @param string $varname
-     * @param array $params
+     * @param array  $params
      */
     protected function _dumpRenderLite($data, $varname = '...', $params = array())
     {
@@ -1696,9 +1803,9 @@ class JBDump
 
     /**
      * Dump render - to logfile
-     * @param mixed $data
+     * @param mixed  $data
      * @param string $varname
-     * @param array $params
+     * @param array  $params
      */
     protected function _dumpRenderLog($data, $varname = '...', $params = array())
     {
@@ -1707,9 +1814,9 @@ class JBDump
 
     /**
      * Dump render - send to email
-     * @param mixed $data
+     * @param mixed  $data
      * @param string $varname
-     * @param array $params
+     * @param array  $params
      */
     protected function _dumpRenderMail($data, $varname = '...', $params = array())
     {
@@ -1721,9 +1828,9 @@ class JBDump
 
     /**
      * Dump render - php print_r
-     * @param mixed $data
+     * @param mixed  $data
      * @param string $varname
-     * @param array $params
+     * @param array  $params
      */
     protected function _dumpRenderPrintr($data, $varname = '...', $params = array())
     {
@@ -1732,9 +1839,9 @@ class JBDump
 
     /**
      * Dump render - php var_dump
-     * @param mixed $data
+     * @param mixed  $data
      * @param string $varname
-     * @param array $params
+     * @param array  $params
      */
     protected function _dumpRenderVardump($data, $varname = '...', $params = array())
     {
@@ -1799,7 +1906,7 @@ class JBDump
 
     /**
      * Maps type variable to a function
-     * @param   mixed $data Mixed data for dump
+     * @param   mixed  $data Mixed data for dump
      * @param   string $name Variable name
      * @return  JBDump
      */
@@ -1871,8 +1978,8 @@ class JBDump
 
     /**
      * Render HTML for object and array
-     * @param   array|object $data Variablevalue
-     * @param   bool $isExpanded Flag is current block expanded
+     * @param   array|object $data       Variablevalue
+     * @param   bool         $isExpanded Flag is current block expanded
      * @return  void
      */
     protected function _vars($data, $isExpanded = false)
@@ -1936,7 +2043,7 @@ class JBDump
 
     /**
      * Render HTML for Boolean type
-     * @param   bool $data Variable
+     * @param   bool   $data Variable
      * @param   string $name Variable name
      * @return  void
      */
@@ -1949,7 +2056,7 @@ class JBDump
     /**
      * Render HTML for Integer type
      * @param   integer $data Variable
-     * @param   string $name Variable name
+     * @param   string  $name Variable name
      * @return  void
      */
     protected function _integer($data, $name)
@@ -1959,7 +2066,7 @@ class JBDump
 
     /**
      * Render HTML for float (double) type
-     * @param   float $data Variable
+     * @param   float  $data Variable
      * @param   string $name Variable name
      * @return  void
      */
@@ -1971,7 +2078,7 @@ class JBDump
     /**
      * Render HTML for resource type
      * @param   resource $data Variable
-     * @param   string $name Variable name
+     * @param   string   $name Variable name
      * @return  void
      */
     protected function _resource($data, $name)
@@ -1993,8 +2100,8 @@ class JBDump
 
     /**
      * Render HTML for string type
-     * @param   string $data Variable
-     * @param   string $name Variable name
+     * @param   string $data    Variable
+     * @param   string $name    Variable name
      * @param   string $advType String type (parse mode)
      * @return  void
      */
@@ -2030,7 +2137,8 @@ class JBDump
                 strpos($data, "\n") === false &&
                 strpos($data, "  ") === false &&
                 strpos($data, "\t") === false
-            )) {
+            )
+            ) {
                 $_extra = true;
             } else {
                 $_extra = false;
@@ -2053,7 +2161,8 @@ class JBDump
         }
         ?>
         <li class="jbchild">
-            <div class="jbelement <?php echo $_extra ? ' jbexpand' : ''; ?>" <?php if ($_extra) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
+            <div
+                class="jbelement <?php echo $_extra ? ' jbexpand' : ''; ?>" <?php if ($_extra) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
                 <span class="jbname"><?php echo $name; ?></span>
                 (<span class="jbtype jbtype-string">String</span>, <?php echo $dataLength; ?>)
                 <span class="jbvalue"><?php echo $_; ?></span>
@@ -2072,7 +2181,7 @@ class JBDump
 
     /**
      * Render HTML for array type
-     * @param   array $data Variable
+     * @param   array  $data Variable
      * @param   string $name Variable name
      * @return  void
      */
@@ -2082,9 +2191,11 @@ class JBDump
 
         ?>
         <li class="jbchild">
-            <div class="jbelement<?php echo count($data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
+            <div
+                class="jbelement<?php echo count($data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
                 <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
-                <span class="jbname"><?php echo $name; ?></span> (<span class="jbtype jbtype-array">Array</span>, <?php echo count($data); ?>)
+                <span class="jbname"><?php echo $name; ?></span> (<span
+                    class="jbtype jbtype-array">Array</span>, <?php echo count($data); ?>)
             </div>
             <?php if (count($data)) {
                 $this->_vars($data, $isExpanded);
@@ -2130,7 +2241,8 @@ class JBDump
 
         ?>
         <li class="jbchild">
-            <div class="jbelement<?php echo count($data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
+            <div
+                class="jbelement<?php echo count($data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
                 <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
                 <span class="jbname"><?php echo $name; ?></span> (<span class="jbtype jbtype-closure">Closure</span>)
                 <span class="jbvalue"><?php echo get_class($data); ?></span>
@@ -2154,7 +2266,7 @@ class JBDump
 
     /**
      * Render HTML for undefined variable
-     * @param   mixed $var Variable
+     * @param   mixed  $var  Variable
      * @param   string $name Variable name
      * @return  void
      */
@@ -2166,7 +2278,7 @@ class JBDump
     /**
      * Render HTML for undefined variable
      * @param   string $type Variable type
-     * @param   mixed $data Variable
+     * @param   mixed  $data Variable
      * @param   string $name Variable name
      * @return  void
      */
@@ -2239,8 +2351,8 @@ class JBDump
 
     /**
      * Get formated one trace info
-     * @param   array $info One trace element
-     * @param   bool $addObject Add object to result (low perfomance)
+     * @param   array $info      One trace element
+     * @param   bool  $addObject Add object to result (low perfomance)
      * @return  array
      */
     protected function _getOneTrace($info, $addObject = false)
@@ -2336,8 +2448,8 @@ class JBDump
 
     /**
      * Get last source path from backtrace
-     * @param   array $trace Backtrace
-     * @param   bool $fileOnly Show filename only
+     * @param   array $trace    Backtrace
+     * @param   bool  $fileOnly Show filename only
      * @return  string
      */
     protected function _getSourcePath($trace, $fileOnly = false)
@@ -2848,7 +2960,7 @@ class JBDump
     /**
      * Convert trace information to readable
      * @param array $trace Standard debug backtrace data
-     * @param bool $addObject
+     * @param bool  $addObject
      * @return array
      */
     public function convertTrace($trace, $addObject = false)
@@ -2905,10 +3017,10 @@ class JBDump
     /**
      * Error handler for PHP errors
      * @param   integer $errNo
-     * @param   string $errMsg
-     * @param   string $errFile
+     * @param   string  $errMsg
+     * @param   string  $errFile
      * @param   integer $errLine
-     * @param   array $errCont
+     * @param   array   $errCont
      * @return  bool
      */
     function _errorHandler($errNo, $errMsg, $errFile, $errLine, $errCont)
@@ -3063,7 +3175,7 @@ class JBDump
 
     /**
      * Send message mail
-     * @param mixed $text
+     * @param mixed  $text
      * @param string $subject
      * @param string $to
      * @return bool
@@ -3196,7 +3308,7 @@ class JBDump
      * Highlight SQL query
      * @param        $query
      * @param string $sqlName
-     * @param bool $nl2br
+     * @param bool   $nl2br
      * @return JBDump
      */
     public static function sql($query, $sqlName = 'SQL Query', $nl2br = false)
@@ -3218,8 +3330,8 @@ class JBDump
 
     /**
      * Do the real json encoding adding human readability. Supports automatic indenting with tabs
-     * @param array|object $in The array or object to encode in json
-     * @param int $indent The indentation level. Adds $indent tabs to the string
+     * @param array|object $in     The array or object to encode in json
+     * @param int          $indent The indentation level. Adds $indent tabs to the string
      * @return string
      */
     protected function _jsonEncode($in, $indent = 0)
@@ -3255,7 +3367,6 @@ class JBDump
 /**
  * SQL Formatter is a collection of utilities for debugging SQL queries.
  * It includes methods for formatting, syntax highlighting, removing comments, etc.
- *
  * @package    SqlFormatter
  * @author     Jeremy Dorn <jeremy@jeremydorn.com>
  * @author     Florin Patan <florinpatan@gmail.com>
@@ -3452,10 +3563,8 @@ class JBDump_SqlFormatter
     /**
      * Return the next token and token type in a SQL string.
      * Quoted strings, comments, reserved words, whitespace, and punctuation are all their own tokens.
-     *
-     * @param String $string The SQL string
-     * @param array $previous The result of the previous getNextToken() call
-     *
+     * @param String $string   The SQL string
+     * @param array  $previous The result of the previous getNextToken() call
      * @return Array An associative array containing the type and value of the token.
      */
     protected static function getNextToken($string, $previous = null)
@@ -3604,9 +3713,7 @@ class JBDump_SqlFormatter
     /**
      * Takes a SQL string and breaks it into tokens.
      * Each token is an associative array with type and value.
-     *
      * @param String $string The SQL string
-     *
      * @return Array An array of tokens.
      */
     protected static function tokenize($string)
@@ -3676,10 +3783,8 @@ class JBDump_SqlFormatter
 
     /**
      * Format the whitespace in a SQL string to make it easier to read.
-     *
-     * @param String $string The SQL string
+     * @param String  $string    The SQL string
      * @param boolean $highlight If true, syntax highlighting will also be performed
-     *
      * @return String The SQL string with HTML styles and formatting wrapped in a <pre> tag
      */
     public static function format($string, $highlight = true)
@@ -3966,9 +4071,7 @@ class JBDump_SqlFormatter
 
     /**
      * Add syntax highlighting to a SQL string
-     *
      * @param String $string The SQL string
-     *
      * @return String The SQL string with HTML styles applied
      */
     public static function highlight($string)
@@ -3987,9 +4090,7 @@ class JBDump_SqlFormatter
     /**
      * Split a SQL string into multiple queries.
      * Uses ";" as a query delimiter.
-     *
      * @param String $string The SQL string
-     *
      * @return Array An array of individual query strings without trailing semicolons
      */
     public static function splitQuery($string)
@@ -4028,9 +4129,7 @@ class JBDump_SqlFormatter
 
     /**
      * Remove all comments from a SQL string
-     *
      * @param String $string The SQL string
-     *
      * @return String The SQL string without comments
      */
     public static function removeComments($string)
@@ -4054,9 +4153,7 @@ class JBDump_SqlFormatter
 
     /**
      * Compress a query by collapsing white space and removing comments
-     *
      * @param String $string The SQL string
-     *
      * @return String The SQL string without comments
      */
     public static function compress($string)
@@ -4096,9 +4193,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a token depending on its type.
-     *
      * @param Array $token An associative array containing type and value.
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightToken($token)
@@ -4142,9 +4237,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a quoted string
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightQuote($value)
@@ -4158,9 +4251,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a backtick quoted string
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightBacktickQuote($value)
@@ -4174,9 +4265,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a reserved word
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightReservedWord($value)
@@ -4190,9 +4279,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a boundary token
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightBoundary($value)
@@ -4210,9 +4297,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a number
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightNumber($value)
@@ -4226,9 +4311,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights an error
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightError($value)
@@ -4242,9 +4325,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a comment
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightComment($value)
@@ -4258,9 +4339,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a word token
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightWord($value)
@@ -4274,9 +4353,7 @@ class JBDump_SqlFormatter
 
     /**
      * Highlights a variable token
-     *
      * @param String $value The token's value
-     *
      * @return String HTML code of the highlighted token.
      */
     protected static function highlightVariable($value)
@@ -4290,9 +4367,7 @@ class JBDump_SqlFormatter
 
     /**
      * Helper function for building regular expressions for reserved words and boundary characters
-     *
      * @param String $a The string to be quoted
-     *
      * @return String The quoted string
      */
     private static function quote_regex($a)
@@ -4302,9 +4377,7 @@ class JBDump_SqlFormatter
 
     /**
      * Helper function for building string output
-     *
      * @param String $string The string to be quoted
-     *
      * @return String The quoted string
      */
     private static function output($string)
@@ -4338,11 +4411,11 @@ class JBDump_SqlFormatter
 class JBDump_array2php
 {
 
-    const LE = "\n";
+    const LE  = "\n";
     const TAB = "    ";
 
     /**
-     * @param $array
+     * @param      $array
      * @param null $varName
      * @return string
      */
@@ -4354,23 +4427,23 @@ class JBDump_array2php
         if ($shift > 0) {
             $rendered = explode(self::LE, $rendered);
 
-            foreach($rendered as $key => $line) {
+            foreach ($rendered as $key => $line) {
                 $rendered[$key] = $self->_getIndent($shift) . $line;
             }
 
             $rendered[0] = ltrim($rendered[0]);
-            $rendered = implode(self::LE, $rendered);
+            $rendered    = implode(self::LE, $rendered);
         }
 
         if ($varName) {
-            return "\n" . $self->_getIndent($shift) . "\$" .  $varName . ' = ' . $rendered . ";\n " . self::TAB;
+            return "\n" . $self->_getIndent($shift) . "\$" . $varName . ' = ' . $rendered . ";\n " . self::TAB;
         }
 
         return $rendered;
     }
 
     /**
-     * @param $array
+     * @param     $array
      * @param int $depth
      * @return string
      */
@@ -4384,7 +4457,7 @@ class JBDump_array2php
 
         if (is_object($array)) {
             $isObject = get_class($array);
-            $array = (array)$array;
+            $array    = (array)$array;
         }
 
         if (!is_array($array)) {
@@ -4397,7 +4470,7 @@ class JBDump_array2php
 
         $string = 'array( ' . self::LE;
         if ($isObject) {
-            $string = '(object)array( ' . self::LE . $this->_getIndent($depth + 1) .'/* Object: "' . $isObject . '" */ ' . self::LE;
+            $string = '(object)array( ' . self::LE . $this->_getIndent($depth + 1) . '/* Object: "' . $isObject . '" */ ' . self::LE;
         }
 
         $depth++;
@@ -4459,9 +4532,9 @@ class JBDump_array2php
 
 /**
  * Alias for JBDump::i()->dump($var) with additions params
- * @param   mixed $var Variable
- * @param   string $name Variable name
- * @param   bool $isDie Die after dump
+ * @param   mixed  $var   Variable
+ * @param   string $name  Variable name
+ * @param   bool   $isDie Die after dump
  * @return  JBDump
  */
 function jbdump($var = 'JBDump::variable is no set', $isDie = true, $name = '...')
