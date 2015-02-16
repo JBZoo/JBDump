@@ -48,7 +48,7 @@ class JBDump
             'path'      => false, // absolute log path
             'file'      => 'jbdump', // log filename
             'format'    => "{DATETIME}\t{CLIENT_IP}\t\t{FILE}\t\t{NAME}\t\t{JBDUMP_MESSAGE}", // fields in log file
-            'serialize' => 'print_r', // (none|json|serialize|print_r|var_dump|format)
+            'serialize' => 'print_r', // (none|json|serialize|print_r|var_dump|format|php_array)
         ),
 
         // // // profiler
@@ -108,6 +108,15 @@ class JBDump
      * @var bool
      */
     public static $enabled = true;
+
+    /**
+     * Flag enable or disable the debugger
+     * @var bool
+     */
+    public static $counters = array(
+        '0' => array(),
+        '1' => array(),
+    );
 
     /**
      * Library version
@@ -240,6 +249,12 @@ class JBDump
 
             $this->profiler(self::$_config['profiler']['render']);
         }
+
+        if (!empty(self::$counters[0])) {
+            foreach (self::$counters[0] as $counterName => $count) {
+                echo '<pre>JBDumpInc / ' . $counterName . ' = ' . $count . '</pre>';
+            }
+        }
     }
 
     /**
@@ -273,7 +288,7 @@ class JBDump
         static $loaded;
         if (!isset($loaded) || $force) {
             $loaded = true;
-            
+
             echo
             '<script type="text/javascript">
                 function jbdump() {}
@@ -284,7 +299,7 @@ class JBDump
                 if (ul[0].parentNode.style.display == "block") {jbdump.reclass(el, "jbopened");} else {jbdump.unclass(el, "jbopened");}};
             </script>
             <style>
-                #jbdump{border:solid 1px #333;border-radius:6px;position:relative;z-index:10101;min-width:400px;max-width:1280px;margin:6px auto;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;}
+                #jbdump{border:solid 1px #333;border-radius:6px;position:relative;z-index:10101;min-width:400px;max-width:1280px;margin:6px auto;padding:6px;clear:both;background:#fff;opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px !important;text-align:left!important;}
                 #jbdump ::selection {background: #89cac9;color: #333;text-shadow: none;}
                 #jbdump *{opacity:1;filter:alpha(opacity=100);font-size:12px !important;line-height:16px!important;font-family:monospace, Verdana, Helvetica;margin:0;padding:0;color:#333;}
                 #jbdump li{list-style:none !important;}
@@ -319,8 +334,8 @@ class JBDump
                 .google-visualization-table-table td img{height:12px !important;}
             </style>';
         }
-    }    
-    
+    }
+
     /**
      * Check permissions for show all debug messages
      *  - check ip, it if set in config
@@ -547,10 +562,12 @@ class JBDump
             $entry = ($entry) ? 'TRUE' : 'FALSE';
         } elseif (is_null($entry)) {
             $entry = 'NULL';
+        } elseif (is_resource($entry)) {
+            $entry = 'resource of "' . get_resource_type($entry) . '"';
         }
 
         // serialize type
-        if (self::$_config['log']['serialize'] == 'format') {
+        if (self::$_config['log']['serialize'] == 'formats') {
             // don't change log entry
 
         } elseif (self::$_config['log']['serialize'] == 'none') {
@@ -564,6 +581,10 @@ class JBDump
 
         } elseif (self::$_config['log']['serialize'] == 'print_r') {
             $entry = array('jbdump_message' => print_r($entry, true));
+
+        } elseif (self::$_config['log']['serialize'] == 'php_array') {
+            $markName = (empty($markName) || $markName == '...') ? 'dumpVar' : $markName;
+            $entry    = array('jbdump_message' => JBDump_array2php::toString($entry, $markName));
 
         } elseif (self::$_config['log']['serialize'] == 'var_dump') {
             ob_start();
@@ -993,6 +1014,26 @@ class JBDump
     }
 
     /**
+     * @param int    $outputMode
+     *      0 - on destructor (PHP Die)
+     *      1 - immediately
+     * @param string $name
+     */
+    public static function inc($outputMode = 0, $name = 'default') {
+
+        if (!isset(self::$counters[$outputMode][$name])) {
+            self::$counters[$outputMode][$name] = 0;
+        }
+
+        self::$counters[$outputMode][$name]++;
+
+        if ($outputMode == 1) {
+            echo '<pre>' . self::$counters[$outputMode][$name] . '</pre>';
+        }
+
+    }
+
+    /**
      * Find all locale in system
      * list - only for linux like systems
      * @return  JBDump
@@ -1044,6 +1085,26 @@ class JBDump
         }
 
         $output = print_r($var, true);
+
+        $_this = self::i();
+        $_this->_dumpRenderHtml($output, $varname, $params);
+
+        return $_this;
+    }
+
+    /**
+     * Render variable as phpArray
+     * @param mixed  $var
+     * @param string $name
+     * @return mixed
+     */
+    public static function phpArray($var, $varname = 'varName', $params = array())
+    {
+        if (!self::isDebug()) {
+            return false;
+        }
+
+        $output = JBDump_array2php::toString($var, $varname);
 
         $_this = self::i();
         $_this->_dumpRenderHtml($output, $varname, $params);
@@ -1754,7 +1815,7 @@ class JBDump
             }
             $name = $matches[1];
         }
-        
+
         if ($this->_strlen($name) > 80) {
             $name = substr($name, 0, 80) . '...';
         }
@@ -1822,7 +1883,7 @@ class JBDump
         <div class="jbnest" style="<?php echo $isExpanded ? 'display:block' : 'display:none'; ?>">
             <ul class="jbnode">
                 <?php
-                $keys = ($_is_object) ? array_keys(get_object_vars($data)) : array_keys($data);
+                $keys = ($_is_object) ? array_keys(@get_object_vars($data)) : array_keys($data);
 
                 // sorting
                 if (self::$_config['sort']['object'] && $_is_object) {
@@ -1928,8 +1989,8 @@ class JBDump
     {
         $encoding = function_exists('mb_detect_encoding') ? mb_detect_encoding($string) : false;
         return $encoding ? mb_strlen($string, $encoding) : strlen($string);
-    }    
-    
+    }
+
     /**
      * Render HTML for string type
      * @param   string $data Variable
@@ -1949,7 +2010,7 @@ class JBDump
             $data = '<pre class="jbpreview">' . $data . '</pre>';
 
         } elseif ($advType == 'source') {
-            
+
             $data = trim($data);
             if ($data && strpos($data, '<?') !== 0) {
                 $_      = 'PHP Code';
@@ -1960,7 +2021,7 @@ class JBDump
                 $_    = '// code not found';
                 $data = null;
             }
-            
+
         } else {
             $_ = $data;
 
@@ -2040,7 +2101,8 @@ class JBDump
      */
     protected function _object($data, $name)
     {
-        $isExpand   = count(get_object_vars($data)) > 0 || self::$_config['dump']['showMethods'];
+        $count      = count(@get_object_vars($data));
+        $isExpand   = $count > 0 || self::$_config['dump']['showMethods'];
         $isExpanded = $this->_isExpandedLevel();
 
         ?>
@@ -2048,7 +2110,7 @@ class JBDump
         <div class="jbelement<?php echo $isExpand ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
             <?php if ($isExpand) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
             <span class="jbname"><?php echo $name; ?></span>
-            (<span class="jbtype jbtype-object"><?php echo get_class($data); ?></span>, <?php echo count(get_object_vars($data)); ?>)
+            (<span class="jbtype jbtype-object"><?php echo get_class($data); ?></span>, <?php echo $count; ?>)
         </div>
         <?php if ($isExpand) {
         $this->_vars($data, $isExpanded);
@@ -2445,7 +2507,7 @@ class JBDump
             }
         }
 
-        // reflecting class properties 
+        // reflecting class properties
         $properties = $class->getProperties();
         if (is_array($properties)) {
             foreach ($properties as $key => $property) {
@@ -2478,7 +2540,7 @@ class JBDump
             }
         }
 
-        // reflecting class methods 
+        // reflecting class methods
         foreach ($class->getMethods() as $key => $method) {
 
             if ($method->isPublic()) {
@@ -2800,7 +2862,7 @@ class JBDump
                 if (isset($oneTrace['file'])) {
                     $file = $oneTrace['file'];
                 }
-                
+
                 $result['#' . ($key - 1) . ' ' . $oneTrace['func']] = $file;
             }
         }
@@ -4268,6 +4330,130 @@ class JBDump_SqlFormatter
         }
     }
 
+}
+
+/**
+ * Class array2php
+ */
+class JBDump_array2php
+{
+
+    const LE = "\n";
+    const TAB = "    ";
+
+    /**
+     * @param $array
+     * @param null $varName
+     * @return string
+     */
+    public static function toString($array, $varName = null, $shift = 0)
+    {
+        $self     = new self();
+        $rendered = $self->_render($array, 0);
+
+        if ($shift > 0) {
+            $rendered = explode(self::LE, $rendered);
+
+            foreach($rendered as $key => $line) {
+                $rendered[$key] = $self->_getIndent($shift) . $line;
+            }
+
+            $rendered[0] = ltrim($rendered[0]);
+            $rendered = implode(self::LE, $rendered);
+        }
+
+        if ($varName) {
+            return "\n" . $self->_getIndent($shift) . "\$" .  $varName . ' = ' . $rendered . ";\n " . self::TAB;
+        }
+
+        return $rendered;
+    }
+
+    /**
+     * @param $array
+     * @param int $depth
+     * @return string
+     */
+    protected function _render($array, $depth = 0)
+    {
+        $isObject = false;
+
+        if ($depth >= 10) {
+            return 'null /* MAX DEEP REACHED! */';
+        }
+
+        if (is_object($array)) {
+            $isObject = get_class($array);
+            $array = (array)$array;
+        }
+
+        if (!is_array($array)) {
+            return 'null /* undefined var */';
+        }
+
+        if (empty($array)) {
+            return $isObject ? '(object)array( /* Object: "' . $isObject . '" */)' : 'array()';
+        }
+
+        $string = 'array( ' . self::LE;
+        if ($isObject) {
+            $string = '(object)array( /* Object: "' . $isObject . '" */ ' . self::LE;
+        }
+
+        $depth++;
+        foreach ($array as $key => $val) {
+            $string .= $this->_getIndent($depth) . $this->_quoteWrap($key) . ' => ';
+
+            if (is_array($val) || is_object($val)) {
+                $string .= $this->_render($val, $depth) . ',' . self::LE;
+            } else {
+                $string .= $this->_quoteWrap($val) . ',' . self::LE;
+            }
+        }
+
+        $depth--;
+        $string .= $this->_getIndent($depth) . ')';
+
+        return $string;
+    }
+
+    /**
+     * @param $depth
+     * @return string
+     */
+    protected function _getIndent($depth)
+    {
+        return str_repeat(self::TAB, $depth);
+    }
+
+    /**
+     * @param $var
+     * @return string
+     */
+    protected function _quoteWrap($var)
+    {
+        $type = strtolower(gettype($var));
+
+        switch ($type) {
+            case 'string':
+                return "'" . str_replace("'", "\\'", $var) . "'";
+
+            case 'null':
+                return "null";
+
+            case 'boolean':
+                return $var ? 'TRUE' : 'FALSE';
+
+            case 'object':
+                return '"{ Object: ' . get_class($var) . ' }"';
+
+            //TODO: handle other variable types.. ( objects? )
+            case 'integer':
+            case 'double':
+            default :
+                return $var;
+        }
+    }
 }
 
 
