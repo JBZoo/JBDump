@@ -3,6 +3,7 @@
  * Library for dump variables and profiling PHP code
  * The idea and the look was taken from Krumo project
  * PHP version 5.3 or higher
+ * *
  * Example:<br/>
  *      jbdump($myLoveVariable);<br/>
  *      jbdump($myLoveVariable, false, 'Var name');<br/>
@@ -10,10 +11,12 @@
  *      jbdump::log('Message to log file');<br/>
  *      jbdump::i()->dump($myLoveVariable);<br/>
  *      jbdump::i()->post()->get()->mark('Profiler mark');<br/>
+ * *
  * Simple include in project on index.php file
  * if (file_exists( dirname(__FILE__) . '/class.jbdump.php')) { require_once dirname(__FILE__) . '/class.jbdump.php'; }
+ * *
  * @package     JBDump
- * @version     1.4.1
+ * @version     1.4.2
  * @copyright   Copyright (c) 2009-2014 JBDump.org
  * @license     http://www.gnu.org/licenses/gpl.html GNU/GPL
  * @author      SmetDenis <admin@JBDump.org>, <admin@jbzoo.com>
@@ -119,7 +122,7 @@ class JBDump
      * Library version
      * @var string
      */
-    const VERSION = '1.4.1';
+    const VERSION = '1.4.2';
 
     /**
      * Library version
@@ -1127,7 +1130,7 @@ class JBDump
 
             $context = null;
             if ($method == 'post') {
-                $context  = stream_context_create(array('http' => array(
+                $context = stream_context_create(array('http' => array(
                     'method'  => 'POST',
                     'header'  => 'Content-type: application/x-www-form-urlencoded',
                     'content' => $queryData
