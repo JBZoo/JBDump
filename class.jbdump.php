@@ -1021,6 +1021,10 @@ class JBDump
      */
     public static function inc($outputMode = 0, $name = 'default')
     {
+        if (is_string($outputMode)) {
+            $name       = $outputMode;
+            $outputMode = 0;
+        }
 
         if (!isset(self::$counters[$outputMode][$name])) {
             self::$counters[$outputMode][$name] = 0;
