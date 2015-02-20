@@ -256,7 +256,7 @@ class JBDump
         // JBDump incriment output
         if (!empty(self::$_counters[0])) {
             foreach (self::$_counters[0] as $counterName => $count) {
-                echo '<pre>JBDumpInc / ' . $counterName . ' = ' . $count . '</pre>';
+                echo '<pre>JBDump Increment / ' . $counterName . ' = ' . $count . '</pre>';
             }
         }
 
@@ -265,9 +265,8 @@ class JBDump
 
             foreach (self::$_profilerPairs as $label => $pairs) {
 
-                $timeDelta = $memDelta = 0;
+                $timeDelta = $memDelta = $count = 0;
                 $memDiffs  = $timeDiffs = array();
-                $count     = 0;
 
                 foreach ($pairs as $key => $pair) {
 
@@ -288,6 +287,9 @@ class JBDump
                 }
 
                 if ($count > 0) {
+
+                    $count++;
+
                     $output = array(
                         '<pre>JBDump ProfilerPairs / "' . $label . '"',
                         'Count  = ' . $count,
@@ -1308,9 +1310,9 @@ class JBDump
 
         // neaten the newlines and indents
         $output = preg_replace("/\]\=\>\n(\s+)/m", "] => ", $output);
-        if (!extension_loaded('xdebug')) {
-            $output = $_this->_htmlChars($output);
-        }
+        //if (!extension_loaded('xdebug')) {
+        $output = $_this->_htmlChars($output);
+        //}
 
         $_this->_dumpRenderHtml($output, $varname . '::html', $params);
 
@@ -1458,10 +1460,15 @@ class JBDump
      */
     public static function markStart($label = 'default')
     {
+        $time   = self::_microtime();
+        $memory = self::_getMemory();
+
         $_this = self::i();
         if (!$_this->isDebug()) {
             return false;
         }
+
+        $label = trim($label);
 
         if (!isset(self::$_profilerPairs[$label])) {
             self::$_profilerPairs[$label] = array();
@@ -1472,9 +1479,7 @@ class JBDump
             $length++;
         }
 
-        self::$_profilerPairs[$label][$length] = array('start' => array(
-            self::_microtime(), self::_getMemory()
-        ));
+        self::$_profilerPairs[$label][$length] = array('start' => array($time, $memory));
 
         return $_this;
     }
@@ -1485,20 +1490,26 @@ class JBDump
      */
     public static function markStop($label = 'default')
     {
+        $time   = self::_microtime();
+        $memory = self::_getMemory();
+
         $_this = self::i();
         if (!$_this->isDebug()) {
             return false;
         }
 
+        $label = trim($label);
+
         if (!isset(self::$_profilerPairs[$label])) {
             self::$_profilerPairs[$label] = array();
         }
 
-        $length = count(self::$_profilerPairs[$label]) - 1;
+        $length = count(self::$_profilerPairs[$label]);
+        if ($length > 0) {
+            $length--;
+        }
 
-        self::$_profilerPairs[$label][$length]['stop'] = array(
-            self::_microtime(), self::_getMemory()
-        );
+        self::$_profilerPairs[$label][$length]['stop'] = array($time, $memory);
 
         return $_this;
     }
@@ -1592,9 +1603,15 @@ class JBDump
             }
         }
         */
-        $encoding = 'UTF-8';
 
-        return htmlSpecialChars((string)$data, ENT_QUOTES | ENT_XML1 | ENT_SUBSTITUTE, $encoding, true);
+        $encoding = 'UTF-8';
+        if (version_compare(PHP_VERSION, '5.4', '>=')) {
+            $flags = ENT_QUOTES | ENT_XML1 | ENT_SUBSTITUTE;
+        } else {
+            $flags = ENT_QUOTES;
+        }
+
+        return htmlSpecialChars((string)$data, $flags, $encoding, true);
     }
 
     /**
