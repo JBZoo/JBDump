@@ -16,7 +16,7 @@
  * if (file_exists( dirname(__FILE__) . '/class.jbdump.php')) { require_once dirname(__FILE__) . '/class.jbdump.php'; }
  * *
  * @package     JBDump
- * @version     1.4.2
+ * @version     1.4.3
  * @copyright   Copyright (c) 2009-2014 JBDump.org
  * @license     http://www.gnu.org/licenses/gpl.html GNU/GPL
  * @author      SmetDenis <admin@JBDump.org>, <admin@jbzoo.com>
@@ -110,19 +110,25 @@ class JBDump
     public static $enabled = true;
 
     /**
-     * Flag enable or disable the debugger
-     * @var bool
+     * Counters of calling
+     * @var array
      */
-    public static $counters = array(
+    protected static $_counters = array(
         '0' => array(),
         '1' => array(),
     );
 
     /**
+     * Counteins of pairs calling
+     * @var array
+     */
+    protected static $_profilerPairs = array();
+
+    /**
      * Library version
      * @var string
      */
-    const VERSION = '1.4.2';
+    const VERSION = '1.4.3';
 
     /**
      * Library version
@@ -240,19 +246,74 @@ class JBDump
     function __destruct()
     {
         if (!self::$_isDie) {
-
             self::$_isDie = true;
-
             if (self::$_config['profiler']['showEnd']) {
                 self::mark('jbdump::end');
             }
-
             $this->profiler(self::$_config['profiler']['render']);
         }
 
-        if (!empty(self::$counters[0])) {
-            foreach (self::$counters[0] as $counterName => $count) {
+        // JBDump incriment output
+        if (!empty(self::$_counters[0])) {
+            foreach (self::$_counters[0] as $counterName => $count) {
                 echo '<pre>JBDumpInc / ' . $counterName . ' = ' . $count . '</pre>';
+            }
+        }
+
+        // JBDump pairs profiler
+        if (!empty(self::$_profilerPairs)) {
+
+            foreach (self::$_profilerPairs as $label => $pairs) {
+
+                $timeDelta = $memDelta = 0;
+                $memDiffs  = $timeDiffs = array();
+                $count     = 0;
+
+                foreach ($pairs as $key => $pair) {
+
+                    if (!isset($pair['stop']) || !isset($pair['start'])) {
+                        continue;
+                    }
+
+                    $count++;
+
+                    $tD = $pair['stop'][0] - $pair['start'][0];
+                    $mD = $pair['stop'][1] - $pair['start'][1];
+
+                    $timeDiffs[] = $tD;
+                    $memDiffs[]  = $mD;
+
+                    $timeDelta += $tD;
+                    $memDelta += $mD;
+                }
+
+                if ($count > 0) {
+                    $output = array(
+                        '<pre>JBDump ProfilerPairs / "' . $label . '"',
+                        'Count  = ' . $count,
+                        'Time   = ' . implode(";\t\t", array(
+                            'ave: ' . self::_profilerFormatTime(array_sum($timeDiffs) / $count, true),
+                            'sum: ' . self::_profilerFormatTime(array_sum($timeDiffs), true),
+                            'min: ' . self::_profilerFormatTime(min($timeDiffs), true),
+                            'max: ' . self::_profilerFormatTime(max($timeDiffs), true),
+                        )),
+                        'Memory = ' . implode(";\t\t", array(
+                            'ave: ' . self::_profilerFormatMemory(array_sum($memDiffs) / $count, true),
+                            'sum: ' . self::_profilerFormatMemory(array_sum($memDiffs), true),
+                            'min: ' . self::_profilerFormatMemory(min($memDiffs), true),
+                            'max: ' . self::_profilerFormatMemory(max($memDiffs), true),
+                        )),
+                        '</pre>'
+                    );
+                } else {
+                    $output = array(
+                        '<pre>JBDump ProfilerPairs / "' . $label . '"',
+                        'Count  = ' . $count,
+                        '</pre>'
+                    );
+                }
+
+                echo implode("\n", $output);
             }
         }
     }
@@ -1026,14 +1087,14 @@ class JBDump
             $outputMode = 0;
         }
 
-        if (!isset(self::$counters[$outputMode][$name])) {
-            self::$counters[$outputMode][$name] = 0;
+        if (!isset(self::$_counters[$outputMode][$name])) {
+            self::$_counters[$outputMode][$name] = 0;
         }
 
-        self::$counters[$outputMode][$name]++;
+        self::$_counters[$outputMode][$name]++;
 
         if ($outputMode == 1) {
-            echo '<pre>' . $name . ' = ' . self::$counters[$outputMode][$name] . '</pre>';
+            echo '<pre>' . $name . ' = ' . self::$_counters[$outputMode][$name] . '</pre>';
         }
 
     }
@@ -1391,6 +1452,58 @@ class JBDump
     }
 
     /**
+     * @param string $label
+     * @return bool
+     * @return  JBDump
+     */
+    public static function markStart($label = 'default')
+    {
+        $_this = self::i();
+        if (!$_this->isDebug()) {
+            return false;
+        }
+
+        if (!isset(self::$_profilerPairs[$label])) {
+            self::$_profilerPairs[$label] = array();
+        }
+
+        $length = count(self::$_profilerPairs[$label]);
+        if (isset(self::$_profilerPairs[$label][$length]['start'])) {
+            $length++;
+        }
+
+        self::$_profilerPairs[$label][$length] = array('start' => array(
+            self::_microtime(), self::_getMemory()
+        ));
+
+        return $_this;
+    }
+
+    /**
+     * @param string $label
+     * @return  JBDump
+     */
+    public static function markStop($label = 'default')
+    {
+        $_this = self::i();
+        if (!$_this->isDebug()) {
+            return false;
+        }
+
+        if (!isset(self::$_profilerPairs[$label])) {
+            self::$_profilerPairs[$label] = array();
+        }
+
+        $length = count(self::$_profilerPairs[$label]) - 1;
+
+        self::$_profilerPairs[$label][$length]['stop'] = array(
+            self::_microtime(), self::_getMemory()
+        );
+
+        return $_this;
+    }
+
+    /**
      * Output a time mark
      * The mark is returned as text current profiler status
      * @param   string $label A label for the time mark
@@ -1486,22 +1599,36 @@ class JBDump
 
     /**
      * Convert profiler memory value to usability view
-     * @param int $memoryBits
+     * @param int  $memoryBytes
+     * @param bool $addMeasure
      * @return float
      */
-    protected static function _profilerFormatMemory($memoryBits)
+    protected static function _profilerFormatMemory($memoryBytes, $addMeasure = false)
     {
-        return round($memoryBits / 1024 / 1024, 3);
+        $bytes = round($memoryBytes / 1024 / 1024, 3);
+
+        if ($addMeasure) {
+            $bytes .= ' kB';
+        }
+
+        return $bytes;
     }
 
     /**
      * Convert profiler time value to usability view
-     * @param $time
+     * @param      $time
+     * @param bool $addMeasure
      * @return float
      */
-    protected static function _profilerFormatTime($time)
+    protected static function _profilerFormatTime($time, $addMeasure = false)
     {
-        return round($time * 1000, 0);
+        $time = round($time * 1000, 2);
+
+        if ($addMeasure) {
+            $time .= ' ms';
+        }
+
+        return $time;
     }
 
     /**
