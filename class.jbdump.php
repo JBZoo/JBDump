@@ -294,14 +294,14 @@ class JBDump
                         'Time   = ' . implode(";\t\t", array(
                             'ave: ' . self::_profilerFormatTime(array_sum($timeDiffs) / $count, true),
                             'sum: ' . self::_profilerFormatTime(array_sum($timeDiffs), true),
-                            'min: ' . self::_profilerFormatTime(min($timeDiffs), true),
-                            'max: ' . self::_profilerFormatTime(max($timeDiffs), true),
+                            'min(' . (array_search(min($timeDiffs), $timeDiffs) + 1) . '):' . self::_profilerFormatTime(min($timeDiffs), true),
+                            'max(' . (array_search(max($timeDiffs), $timeDiffs) + 1) . '): ' . self::_profilerFormatTime(max($timeDiffs), true),
                         )),
                         'Memory = ' . implode(";\t\t", array(
                             'ave: ' . self::_profilerFormatMemory(array_sum($memDiffs) / $count, true),
                             'sum: ' . self::_profilerFormatMemory(array_sum($memDiffs), true),
-                            'min: ' . self::_profilerFormatMemory(min($memDiffs), true),
-                            'max: ' . self::_profilerFormatMemory(max($memDiffs), true),
+                            'min(' . (array_search(min($memDiffs), $memDiffs) + 1) . '): ' . self::_profilerFormatMemory(min($memDiffs), true),
+                            'max(' . (array_search(max($memDiffs), $memDiffs) + 1) . '): ' . self::_profilerFormatMemory(max($memDiffs), true),
                         )),
                         '</pre>'
                     );
