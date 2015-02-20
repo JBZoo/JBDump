@@ -294,10 +294,10 @@ class JBDump
                         '<pre>JBDump ProfilerPairs / "' . $label . '"',
                         'Count  = ' . $count,
                         'Time   = ' . implode(";\t\t", array(
-                            'ave: ' . self::_profilerFormatTime(array_sum($timeDiffs) / $count, true),
-                            'sum: ' . self::_profilerFormatTime(array_sum($timeDiffs), true),
-                            'min(' . (array_search(min($timeDiffs), $timeDiffs) + 1) . '):' . self::_profilerFormatTime(min($timeDiffs), true),
-                            'max(' . (array_search(max($timeDiffs), $timeDiffs) + 1) . '): ' . self::_profilerFormatTime(max($timeDiffs), true),
+                            'ave: ' . self::_profilerFormatTime(array_sum($timeDiffs) / $count, true, 2),
+                            'sum: ' . self::_profilerFormatTime(array_sum($timeDiffs), true, 2),
+                            'min(' . (array_search(min($timeDiffs), $timeDiffs) + 1) . '):' . self::_profilerFormatTime(min($timeDiffs), true, 2),
+                            'max(' . (array_search(max($timeDiffs), $timeDiffs) + 1) . '): ' . self::_profilerFormatTime(max($timeDiffs), true, 2),
                         )),
                         'Memory = ' . implode(";\t\t", array(
                             'ave: ' . self::_profilerFormatMemory(array_sum($memDiffs) / $count, true),
@@ -1099,6 +1099,7 @@ class JBDump
             echo '<pre>' . $name . ' = ' . self::$_counters[$outputMode][$name] . '</pre>';
         }
 
+        return self::$_counters[$outputMode][$name];
     }
 
     /**
@@ -1625,7 +1626,7 @@ class JBDump
         $bytes = round($memoryBytes / 1024 / 1024, 3);
 
         if ($addMeasure) {
-            $bytes .= ' kB';
+            $bytes .= ' mB';
         }
 
         return $bytes;
@@ -1637,9 +1638,9 @@ class JBDump
      * @param bool $addMeasure
      * @return float
      */
-    protected static function _profilerFormatTime($time, $addMeasure = false)
+    protected static function _profilerFormatTime($time, $addMeasure = false, $round = 0)
     {
-        $time = round($time * 1000, 2);
+        $time = round($time * 1000, $round);
 
         if ($addMeasure) {
             $time .= ' ms';
@@ -1754,17 +1755,15 @@ class JBDump
 
                 <?php
                 $i = 0;
-                foreach ($this->_bufferInfo as $key=> $mark) {
-                    ?>
-                data.setCell(<?php echo $key;?>, 0, <?php echo ++$i;?>);
-                data.setCell(<?php echo $key;?>, 1, '<?php echo $mark['label'];?>');
-                data.setCell(<?php echo $key;?>, 2, '<?php echo $mark['trace'];?>');
-                data.setCell(<?php echo $key;?>, 3, <?php echo self::_profilerFormatTime($mark['time']);?>);
-                data.setCell(<?php echo $key;?>, 4, <?php echo self::_profilerFormatTime($mark['timeDiff']);?>);
-                data.setCell(<?php echo $key;?>, 5, <?php echo self::_profilerFormatMemory($mark['memory']);?>);
-                data.setCell(<?php echo $key;?>, 6, "<?php echo self::_profilerFormatMemory($mark['memoryDiff']);?>");
-                <?php
-            } ?>
+                foreach ($this->_bufferInfo as $key=> $mark) : ?>
+                    data.setCell(<?php echo $key;?>, 0, <?php echo ++$i;?>);
+                    data.setCell(<?php echo $key;?>, 1, '<?php echo $mark['label'];?>');
+                    data.setCell(<?php echo $key;?>, 2, '<?php echo $mark['trace'];?>');
+                    data.setCell(<?php echo $key;?>, 3, <?php echo self::_profilerFormatTime($mark['time']);?>);
+                    data.setCell(<?php echo $key;?>, 4, <?php echo self::_profilerFormatTime($mark['timeDiff']);?>);
+                    data.setCell(<?php echo $key;?>, 5, <?php echo self::_profilerFormatMemory($mark['memory']);?>);
+                    data.setCell(<?php echo $key;?>, 6, "<?php echo self::_profilerFormatMemory($mark['memoryDiff']);?>");
+                <?php endforeach; ?>
 
                 var formatter = new google.visualization.TableBarFormat({width: 120});
                 formatter.format(data, 4);
