@@ -288,8 +288,6 @@ class JBDump
 
                 if ($count > 0) {
 
-                    $count++;
-
                     $output = array(
                         '<pre>JBDump ProfilerPairs / "' . $label . '"',
                         'Count  = ' . $count,
@@ -1626,7 +1624,7 @@ class JBDump
         $bytes = round($memoryBytes / 1024 / 1024, 3);
 
         if ($addMeasure) {
-            $bytes .= ' mB';
+            $bytes .= ' MB';
         }
 
         return $bytes;
