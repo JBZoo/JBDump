@@ -53,10 +53,12 @@ class JBDump
 
         // // // profiler
         'profiler' => array(
-            'auto'      => true, // Result call automatically on destructor
-            'render'    => 20, // Profiler render (bit mask). See constants jbdump::PROFILER_RENDER_*
-            'showStart' => 0, // Set auto mark after jbdump init
-            'showEnd'   => 0, // Set auto mark before jbdump destruction
+            'auto'       => true, // Result call automatically on destructor
+            'render'     => 20, // Profiler render (bit mask). See constants jbdump::PROFILER_RENDER_*
+            'showStart'  => 0, // Set auto mark after jbdump init
+            'showEnd'    => 0, // Set auto mark before jbdump destruction
+            'showOnAjax' => 0, // Show profiler information on ajax calls
+            'traceLimit' => 3, // Limit for function JBDump::incTrace();
         ),
 
         // // // sorting (ASC)
@@ -114,8 +116,9 @@ class JBDump
      * @var array
      */
     protected static $_counters = array(
-        '0' => array(),
-        '1' => array(),
+        'mode_0' => array(),
+        'mode_1' => array(),
+        'trace'  => array(),
     );
 
     /**
@@ -128,7 +131,7 @@ class JBDump
      * Library version
      * @var string
      */
-    const VERSION = '1.4.3';
+    const VERSION = '1.4.4';
 
     /**
      * Library version
@@ -253,10 +256,32 @@ class JBDump
             $this->profiler(self::$_config['profiler']['render']);
         }
 
+        if (!self::$_config['profiler']['showOnAjax'] && self::isAjax()) {
+            return;
+        }
+
         // JBDump incriment output
-        if (!empty(self::$_counters[0])) {
-            foreach (self::$_counters[0] as $counterName => $count) {
+        if (!empty(self::$_counters['mode_0'])) {
+
+            arsort(self::$_counters['mode_0']);
+
+            foreach (self::$_counters['mode_0'] as $counterName => $count) {
                 echo '<pre>JBDump Increment / ' . $counterName . ' = ' . $count . '</pre>';
+            }
+        }
+
+        // JBDump trace incriment output
+        if (!empty(self::$_counters['trace'])) {
+
+            uasort(self::$_counters['trace'], function ($a, $b) {
+                if ($a['count'] == $b['count']) {
+                    return 0;
+                }
+                return ($a['count'] < $b['count']) ? 1 : -1;
+            });
+
+            foreach (self::$_counters['trace'] as $counterHash => $traceInfo) {
+                self::i()->dump($traceInfo['trace'], $traceInfo['label'] . ' // count = ' . $traceInfo['count']);
             }
         }
 
@@ -313,7 +338,7 @@ class JBDump
                     );
                 }
 
-                echo implode("\n", $output);
+                echo implode(PHP_EOL, $output);
             }
         }
     }
@@ -678,7 +703,7 @@ class JBDump
 
         // Write the log entry line
         if ($_this->_openLog()) {
-            error_log($line . "\n", 3, $_this->_logfile);
+            error_log($line . PHP_EOL, 3, $_this->_logfile);
         }
 
         return $_this;
@@ -705,13 +730,13 @@ class JBDump
             $fields   = strtolower($fields);
             $header[] = '#' . str_replace("\t", "\t", $fields);
 
-            $head = implode("\n", $header);
+            $head = implode(PHP_EOL, $header);
         } else {
             $head = false;
         }
 
         if ($head) {
-            error_log($head . "\n", 3, $this->_logfile);
+            error_log($head . PHP_EOL, 3, $this->_logfile);
         }
 
         return true;
@@ -1087,17 +1112,17 @@ class JBDump
             $outputMode = 0;
         }
 
-        if (!isset(self::$_counters[$outputMode][$name])) {
-            self::$_counters[$outputMode][$name] = 0;
+        if (!isset(self::$_counters['mode_' . $outputMode][$name])) {
+            self::$_counters['mode_' . $outputMode][$name] = 0;
         }
 
-        self::$_counters[$outputMode][$name]++;
+        self::$_counters['mode_' . $outputMode][$name]++;
 
         if ($outputMode == 1) {
-            echo '<pre>' . $name . ' = ' . self::$_counters[$outputMode][$name] . '</pre>';
+            echo '<pre>' . $name . ' = ' . self::$_counters['mode_' . $outputMode][$name] . '</pre>';
         }
 
-        return self::$_counters[$outputMode][$name];
+        return self::$_counters['mode_' . $outputMode][$name];
     }
 
     /**
@@ -1222,7 +1247,7 @@ class JBDump
 
         ob_start();
         @system('locale -a');
-        $locale = explode("\n", trim(ob_get_contents()));
+        $locale = explode(PHP_EOL, trim(ob_get_contents()));
         ob_end_clean();
 
         $result = array(
@@ -1467,8 +1492,6 @@ class JBDump
             return false;
         }
 
-        $label = trim($label);
-
         if (!isset(self::$_profilerPairs[$label])) {
             self::$_profilerPairs[$label] = array();
         }
@@ -1485,6 +1508,43 @@ class JBDump
 
     /**
      * @param string $label
+     * @return bool
+     * @return  int
+     */
+    public static function incTrace($label = 'default')
+    {
+        $_this = self::i();
+        if (!$_this->isDebug()) {
+            return false;
+        }
+
+        $trace = debug_backtrace();
+        unset($trace[0]);
+        unset($trace[1]);
+        $trace     = array_slice($trace, 0, self::$_config['profiler']['traceLimit']);
+        $traceInfo = array();
+        foreach ($trace as $oneTrace) {
+            $traceData   = $_this->_getOneTrace($oneTrace);
+            $traceInfo[] = $traceData['func'];
+        }
+
+        $hash = md5(serialize($traceInfo));
+
+        if (!isset(self::$_counters['trace'][$hash])) {
+            self::$_counters['trace'][$hash] = array(
+                'count' => 0,
+                'label' => $label,
+                'trace' => $traceInfo,
+            );
+        }
+
+        self::$_counters['trace'][$hash]['count']++;
+
+        return self::$_counters['trace'][$hash]['count'];
+    }
+
+    /**
+     * @param string $label
      * @return  JBDump
      */
     public static function markStop($label = 'default')
@@ -1496,8 +1556,6 @@ class JBDump
         if (!$_this->isDebug()) {
             return false;
         }
-
-        $label = trim($label);
 
         if (!isset(self::$_profilerPairs[$label])) {
             self::$_profilerPairs[$label] = array();
@@ -1697,7 +1755,7 @@ class JBDump
         if (self::isAjax()) {
             $this->_dumpRenderLog($totalInfo, 'Profiler total');
         } else {
-            $totalInfo = "\n\t" . implode("\n\t", $totalInfo) . "\n";
+            $totalInfo = PHP_EOL . "\t" . implode(PHP_EOL . "\t", $totalInfo) . PHP_EOL;
             $this->_dumpRenderLite($totalInfo, '! <b>profiler total info</b> !');
         }
     }
@@ -1719,9 +1777,9 @@ class JBDump
      */
     protected function _profilerRenderEcho()
     {
-        $output = "\n";
+        $output = PHP_EOL;
         foreach ($this->_bufferInfo as $key => $mark) {
-            $output .= "\t" . self::_profilerFormatMark($mark) . "\n";
+            $output .= "\t" . self::_profilerFormatMark($mark) . PHP_EOL;
         }
         $this->_dumpRenderLite($output, '! profiler !');
     }
@@ -1754,13 +1812,13 @@ class JBDump
                 <?php
                 $i = 0;
                 foreach ($this->_bufferInfo as $key=> $mark) : ?>
-                    data.setCell(<?php echo $key;?>, 0, <?php echo ++$i;?>);
-                    data.setCell(<?php echo $key;?>, 1, '<?php echo $mark['label'];?>');
-                    data.setCell(<?php echo $key;?>, 2, '<?php echo $mark['trace'];?>');
-                    data.setCell(<?php echo $key;?>, 3, <?php echo self::_profilerFormatTime($mark['time']);?>);
-                    data.setCell(<?php echo $key;?>, 4, <?php echo self::_profilerFormatTime($mark['timeDiff']);?>);
-                    data.setCell(<?php echo $key;?>, 5, <?php echo self::_profilerFormatMemory($mark['memory']);?>);
-                    data.setCell(<?php echo $key;?>, 6, "<?php echo self::_profilerFormatMemory($mark['memoryDiff']);?>");
+                data.setCell(<?php echo $key;?>, 0, <?php echo ++$i;?>);
+                data.setCell(<?php echo $key;?>, 1, '<?php echo $mark['label'];?>');
+                data.setCell(<?php echo $key;?>, 2, '<?php echo $mark['trace'];?>');
+                data.setCell(<?php echo $key;?>, 3, <?php echo self::_profilerFormatTime($mark['time']);?>);
+                data.setCell(<?php echo $key;?>, 4, <?php echo self::_profilerFormatTime($mark['timeDiff']);?>);
+                data.setCell(<?php echo $key;?>, 5, <?php echo self::_profilerFormatMemory($mark['memory']);?>);
+                data.setCell(<?php echo $key;?>, 6, "<?php echo self::_profilerFormatMemory($mark['memoryDiff']);?>");
                 <?php endforeach; ?>
 
                 var formatter = new google.visualization.TableBarFormat({width: 120});
@@ -1938,12 +1996,12 @@ class JBDump
         }
 
         $output   = array();
-        $output[] = "<pre>------------------------------\n";
+        $output[] = "<pre>------------------------------" . PHP_EOL;
         $output[] = $varname . ' = ';
-        $output[] = rtrim($printrOut, "\n");
-        $output[] = "\n------------------------------</pre>\n";
+        $output[] = rtrim($printrOut, PHP_EOL);
+        $output[] = PHP_EOL . "------------------------------</pre>.PHP_EOL";
         if (!self::isAjax()) {
-            echo '<pre class="jbdump" style="text-align: left;">' . implode('', $output) . "</pre>\n";
+            echo '<pre class="jbdump" style="text-align: left;">' . implode('', $output) . "</pre>" . PHP_EOL;
         } else {
             echo implode('', $output);
         }
@@ -2270,7 +2328,7 @@ class JBDump
             if ($data && strpos($data, '<?') !== 0) {
                 $_      = 'PHP Code';
                 $_extra = true;
-                $data   = "<?php\n\n" . $data;
+                $data   = "<?php" . PHP_EOL . PHP_EOL . $data;
                 $data   = '<pre class="jbpreview">' . highlight_string($data, true) . '</pre>';
             } else {
                 $_    = '// code not found';
@@ -3184,7 +3242,7 @@ class JBDump
         if (!(error_reporting() & $errNo) || error_reporting() == 0 || (int)ini_get('display_errors') == 0) {
 
             if (self::$_config['errors']['logHidden']) {
-                $errorMessage = date(self::DATE_FORMAT, time()) . ' ' . $errorMessage . "\n";
+                $errorMessage = date(self::DATE_FORMAT, time()) . ' ' . $errorMessage . PHP_EOL;
 
                 $logPath = self::$_config['log']['path']
                     . '/' . self::$_config['log']['file'] . '_error_' . date('Y.m.d') . '.log';
@@ -3245,7 +3303,7 @@ class JBDump
         $result['code']   = $exception->getCode();
 
         if ($this->_isLiteMode()) {
-            $this->_dumpRenderLite("\n" . $result['string'], '** EXCEPTION / ' . $this->_htmlChars($result['message']));
+            $this->_dumpRenderLite(PHP_EOL . $result['string'], '** EXCEPTION / ' . $this->_htmlChars($result['message']));
 
         } else {
             $this->_initAssets(true);
@@ -3361,7 +3419,7 @@ class JBDump
         $message[] = '<p><b>IP</b>: ' . self::getClientIP() . '</p>';
         $message[] = '<b>Debug message</b>: <pre>' . print_r($text, true) . '</pre>';
         $message[] = '</body></html>';
-        $message   = wordwrap(implode("\n", $message), 70);
+        $message   = wordwrap(implode(PHP_EOL, $message), 70);
 
         // To send HTML mail, the Content-type header must be set
         $headers   = array();
@@ -3497,15 +3555,15 @@ class JBDump
                 $out .= json_encode($value);
             }
 
-            $out .= ",\n";
+            $out .= "," . PHP_EOL;
         }
 
         if (!empty($out)) {
             $out = substr($out, 0, -2);
         }
 
-        $out = " {\n" . $out;
-        $out .= "\n" . str_repeat("    ", $indent) . "}";
+        $out = " {" . PHP_EOL . $out;
+        $out .= PHP_EOL . str_repeat("    ", $indent) . "}";
 
         return $out;
     }
@@ -3729,7 +3787,7 @@ class JBDump_SqlFormatter
         if ($string[0] === '#' || (isset($string[1]) && ($string[0] === '-' && $string[1] === '-') || ($string[0] === '/' && $string[1] === '*'))) {
             // Comment until end of line
             if ($string[0] === '-' || $string[0] === '#') {
-                $last = strpos($string, "\n");
+                $last = strpos($string, PHP_EOL);
                 $type = self::TOKEN_TYPE_COMMENT;
             } else { // Comment until closing comment tag
                 $last = strpos($string, "*/", 2) + 2;
@@ -3990,7 +4048,7 @@ class JBDump_SqlFormatter
 
             // If we need a new line before the token
             if ($newline) {
-                $return .= "\n" . str_repeat($tab, $indent_level);
+                $return .= PHP_EOL . str_repeat($tab, $indent_level);
                 $newline       = false;
                 $added_newline = true;
             } else {
@@ -4001,8 +4059,8 @@ class JBDump_SqlFormatter
             if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_COMMENT || $token[self::TOKEN_TYPE] === self::TOKEN_TYPE_BLOCK_COMMENT) {
                 if ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_BLOCK_COMMENT) {
                     $indent = str_repeat($tab, $indent_level);
-                    $return .= "\n" . $indent;
-                    $highlighted = str_replace("\n", "\n" . $indent, $highlighted);
+                    $return .= PHP_EOL . $indent;
+                    $highlighted = str_replace(PHP_EOL, PHP_EOL . $indent, $highlighted);
                 }
 
                 $return .= $highlighted;
@@ -4018,7 +4076,7 @@ class JBDump_SqlFormatter
                     if ($inline_indented) {
                         array_shift($indent_types);
                         $indent_level--;
-                        $return .= "\n" . str_repeat($tab, $indent_level);
+                        $return .= PHP_EOL . str_repeat($tab, $indent_level);
                     }
 
                     $inline_parentheses = false;
@@ -4110,14 +4168,14 @@ class JBDump_SqlFormatter
                     $indent_level = 0;
 
                     if ($highlight) {
-                        $return .= "\n" . self::highlightError($token[self::TOKEN_VALUE]);
+                        $return .= PHP_EOL . self::highlightError($token[self::TOKEN_VALUE]);
                         continue;
                     }
                 }
 
                 // Add a newline before the closing parentheses (if not already added)
                 if (!$added_newline) {
-                    $return .= "\n" . str_repeat($tab, $indent_level);
+                    $return .= PHP_EOL . str_repeat($tab, $indent_level);
                 }
             } // Top level reserved words start a new line and increase the special indent level
             elseif ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_TOPLEVEL) {
@@ -4134,14 +4192,14 @@ class JBDump_SqlFormatter
                 $newline = true;
                 // Add a newline before the top level reserved word (if not already added)
                 if (!$added_newline) {
-                    $return .= "\n" . str_repeat($tab, $indent_level);
+                    $return .= PHP_EOL . str_repeat($tab, $indent_level);
                 } // If we already added a newline, redo the indentation since it may be different now
                 else {
                     $return = rtrim($return, $tab) . str_repeat($tab, $indent_level);
                 }
 
                 // If the token may have extra whitespace
-                if (strpos($token[self::TOKEN_VALUE], ' ') !== false || strpos($token[self::TOKEN_VALUE], "\n") !== false || strpos($token[self::TOKEN_VALUE], "\t") !== false) {
+                if (strpos($token[self::TOKEN_VALUE], ' ') !== false || strpos($token[self::TOKEN_VALUE], PHP_EOL) !== false || strpos($token[self::TOKEN_VALUE], "\t") !== false) {
                     $highlighted = preg_replace('/\s+/', ' ', $highlighted);
                 }
                 //if SQL 'LIMIT' clause, start variable to reset newline
@@ -4165,11 +4223,11 @@ class JBDump_SqlFormatter
             elseif ($token[self::TOKEN_TYPE] === self::TOKEN_TYPE_RESERVED_NEWLINE) {
                 // Add a newline before the reserved word (if not already added)
                 if (!$added_newline) {
-                    $return .= "\n" . str_repeat($tab, $indent_level);
+                    $return .= PHP_EOL . str_repeat($tab, $indent_level);
                 }
 
                 // If the token may have extra whitespace
-                if (strpos($token[self::TOKEN_VALUE], ' ') !== false || strpos($token[self::TOKEN_VALUE], "\n") !== false || strpos($token[self::TOKEN_VALUE], "\t") !== false) {
+                if (strpos($token[self::TOKEN_VALUE], ' ') !== false || strpos($token[self::TOKEN_VALUE], PHP_EOL) !== false || strpos($token[self::TOKEN_VALUE], "\t") !== false) {
                     $highlighted = preg_replace('/\s+/', ' ', $highlighted);
                 }
             } // Multiple boundary characters in a row should not have spaces between them (not including parentheses)
@@ -4204,7 +4262,7 @@ class JBDump_SqlFormatter
 
         // If there are unmatched parentheses
         if ($highlight && array_search('block', $indent_types) !== false) {
-            $return .= "\n" . self::highlightError("WARNING: unclosed parentheses or section");
+            $return .= PHP_EOL . self::highlightError("WARNING: unclosed parentheses or section");
         }
 
         // Replace tab characters with the configuration tab character
@@ -4531,7 +4589,7 @@ class JBDump_SqlFormatter
     private static function output($string)
     {
         if (self::is_cli()) {
-            return $string . "\n";
+            return $string . PHP_EOL;
         } else {
             $string = trim($string);
             if (!self::$use_pre) {
@@ -4559,7 +4617,7 @@ class JBDump_SqlFormatter
 class JBDump_array2php
 {
 
-    const LE  = "\n";
+    const LE  = PHP_EOL;
     const TAB = "    ";
 
     /**
@@ -4584,7 +4642,7 @@ class JBDump_array2php
         }
 
         if ($varName) {
-            return "\n" . $self->_getIndent($shift) . "\$" . $varName . ' = ' . $rendered . ";\n " . self::TAB;
+            return PHP_EOL . $self->_getIndent($shift) . "\$" . $varName . ' = ' . $rendered . ";" . PHP_EOL . " " . self::TAB;
         }
 
         return $rendered;
