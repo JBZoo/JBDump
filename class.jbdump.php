@@ -39,13 +39,13 @@ class JBDump
      */
     protected static $_config = array
     (
-        'root'     => false, // project root directory
-        'showArgs' => false, // show Args in backtrace
-        'showCall' => true,
+        'root'     => null, // project root directory
+        'showArgs' => 0, // show Args in backtrace
+        'showCall' => 1,
 
         // // // file logger
         'log'      => array(
-            'path'      => false, // absolute log path
+            'path'      => null, // absolute log path
             'file'      => 'jbdump', // log filename
             'format'    => "{DATETIME}\t{CLIENT_IP}\t\t{FILE}\t\t{NAME}\t\t{JBDUMP_MESSAGE}", // fields in log file
             'serialize' => 'print_r', // (none|json|serialize|print_r|var_dump|format|php_array)
@@ -53,7 +53,7 @@ class JBDump
 
         // // // profiler
         'profiler' => array(
-            'auto'       => true, // Result call automatically on destructor
+            'auto'       => 1, // Result call automatically on destructor
             'render'     => 20, // Profiler render (bit mask). See constants jbdump::PROFILER_RENDER_*
             'showStart'  => 0, // Set auto mark after jbdump init
             'showEnd'    => 0, // Set auto mark before jbdump destruction
@@ -63,35 +63,35 @@ class JBDump
 
         // // // sorting (ASC)
         'sort'     => array(
-            'array'   => false, // by keys
-            'object'  => true, // by properties name
-            'methods' => true, // by methods name
+            'array'   => 0, // by keys
+            'object'  => 1, // by properties name
+            'methods' => 1, // by methods name
         ),
 
         // // // personal dump
         'personal' => array(
             'ip'           => array(), // IP address for which to work debugging
-            'requestParam' => false, // $_REQUEST key for which to work debugging
-            'requestValue' => false, // $_REQUEST value for which to work debugging
+            'requestParam' => 0, // $_REQUEST key for which to work debugging
+            'requestValue' => 0, // $_REQUEST value for which to work debugging
         ),
 
         // // // error handlers
         'errors'   => array(
-            'reporting'          => false, // set error reporting level while construct
-            'errorHandler'       => false, // register own handler for PHP errors
-            'errorBacktrace'     => false, // show backtrace for errors
-            'exceptionHandler'   => false, // register own handler for all exeptions
-            'exceptionBacktrace' => false, // show backtrace for exceptions
-            'context'            => false, // show context for errors
-            'logHidden'          => false, // if error message not show, log it
-            'logAll'             => false, // log all error in syslog
+            'reporting'          => 0, // set error reporting level while construct
+            'errorHandler'       => 0, // register own handler for PHP errors
+            'errorBacktrace'     => 0, // show backtrace for errors
+            'exceptionHandler'   => 0, // register own handler for all exeptions
+            'exceptionBacktrace' => 0, // show backtrace for exceptions
+            'context'            => 0, // show context for errors
+            'logHidden'          => 0, // if error message not show, log it
+            'logAll'             => 0, // log all error in syslog
         ),
 
         // // // mail send
         'mail'     => array(
             'to'      => 'jbdump@example.com', // mail to
             'subject' => 'JBDump debug', // mail subject
-            'log'     => false, // log all mail messages
+            'log'     => 0, // log all mail messages
         ),
 
         // // // dump config
@@ -99,8 +99,8 @@ class JBDump
             'render'       => 'html', // (lite|log|mail|print_r|var_dump|html)
             'stringLength' => 80, // cutting long string
             'maxDepth'     => 4, // the maximum depth of the dump
-            'showMethods'  => true, // show object methods
-            'die'          => false, // die after dumping variable
+            'showMethods'  => 1, // show object methods
+            'die'          => 0, // die after dumping variable
             'expandLevel'  => 1, // expand the list to the specified depth
         ),
     );
