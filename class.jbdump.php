@@ -1999,7 +1999,7 @@ class JBDump
         $output[] = "<pre>------------------------------" . PHP_EOL;
         $output[] = $varname . ' = ';
         $output[] = rtrim($printrOut, PHP_EOL);
-        $output[] = PHP_EOL . "------------------------------</pre>.PHP_EOL";
+        $output[] = PHP_EOL . "------------------------------</pre>" . PHP_EOL;
         if (!self::isAjax()) {
             echo '<pre class="jbdump" style="text-align: left;">' . implode('', $output) . "</pre>" . PHP_EOL;
         } else {
@@ -3562,8 +3562,7 @@ class JBDump
             $out = substr($out, 0, -2);
         }
 
-        $out = " {" . PHP_EOL . $out;
-        $out .= PHP_EOL . str_repeat("    ", $indent) . "}";
+        $out = "{" . PHP_EOL . $out . PHP_EOL . str_repeat("    ", $indent) . "}";
 
         return $out;
     }
