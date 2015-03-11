@@ -281,7 +281,7 @@ class JBDump
             });
 
             foreach (self::$_counters['trace'] as $counterHash => $traceInfo) {
-                self::i()->dump($traceInfo['trace'], $traceInfo['label'] . ' // count = ' . $traceInfo['count']);
+                self::i()->dump($traceInfo['trace'], $traceInfo['label'] . ' = ' . $traceInfo['count']);
             }
         }
 
@@ -1524,7 +1524,7 @@ class JBDump
      * @return bool
      * @return  int
      */
-    public static function incTrace($label = 'default')
+    public static function incTrace($label = null)
     {
         $_this = self::i();
         if (!$_this->isDebug()) {
@@ -1532,18 +1532,27 @@ class JBDump
         }
 
         $trace = debug_backtrace();
+
+        if (!$label) {
+           $traceInfo = $_this->_getOneTrace($trace[1]);
+           $line      = isset($trace[0]['line']) ? $trace[0]['line'] : 0;
+           $label      = $traceInfo['func'] . ', line #' . $line;
+        }
+
         unset($trace[0]);
         unset($trace[1]);
         $trace     = array_slice($trace, 0, self::$_config['profiler']['traceLimit']);
         $traceInfo = array();
         foreach ($trace as $oneTrace) {
             $traceData   = $_this->_getOneTrace($oneTrace);
-            $traceInfo[] = $traceData['func'];
+            $line        = isset($oneTrace['line']) ? $oneTrace['line'] : 0;
+            $traceInfo[] = $traceData['func'] . ', line #' . $line;
         }
 
         $hash = md5(serialize($traceInfo));
 
         if (!isset(self::$_counters['trace'][$hash])) {
+
             self::$_counters['trace'][$hash] = array(
                 'count' => 0,
                 'label' => $label,
