@@ -266,7 +266,7 @@ class JBDump
             arsort(self::$_counters['mode_0']);
 
             foreach (self::$_counters['mode_0'] as $counterName => $count) {
-                echo '<pre>JBDump Increment / ' . $counterName . ' = ' . $count . '</pre>';
+                echo '<pre>JBDump Increment / "' . $counterName . '" = ' . $count . '</pre>';
             }
         }
 
@@ -1100,36 +1100,11 @@ class JBDump
     }
 
     /**
-     * @param int    $outputMode
-     *      0 - on destructor (PHP Die)
-     *      1 - immediately
-     * @param string $name
-     */
-    public static function inc($outputMode = 0, $name = 'default')
-    {
-        if (is_string($outputMode)) {
-            $name       = $outputMode;
-            $outputMode = 0;
-        }
-
-        if (!isset(self::$_counters['mode_' . $outputMode][$name])) {
-            self::$_counters['mode_' . $outputMode][$name] = 0;
-        }
-
-        self::$_counters['mode_' . $outputMode][$name]++;
-
-        if ($outputMode == 1) {
-            echo '<pre>' . $name . ' = ' . self::$_counters['mode_' . $outputMode][$name] . '</pre>';
-        }
-
-        return self::$_counters['mode_' . $outputMode][$name];
-    }
-
-    /**
      * @param string $url
      * @param array  $data
      * @param string $method
      * @param array  $params
+     * @return JBDump
      */
     public static function loadUrl($url, $data = array(), $method = 'get', $params = array())
     {
@@ -1504,6 +1479,44 @@ class JBDump
         self::$_profilerPairs[$label][$length] = array('start' => array($time, $memory));
 
         return $_this;
+    }
+
+    /**
+     * @param int    $outputMode
+     *      0 - on destructor (PHP Die)
+     *      1 - immediately
+     * @param string $name
+     */
+    public static function inc($name = null, $outputMode = 0)
+    {
+        $_this = self::i();
+        if (!$_this->isDebug()) {
+            return false;
+        }
+
+        if (!$name) {
+            $trace     = debug_backtrace();
+            $traceInfo = $_this->_getOneTrace($trace[1]);
+            $line      = isset($trace[0]['line']) ? $trace[0]['line'] : 0;
+            $name      = $traceInfo['func'] . ', line #' . $line;
+        }
+
+        if (is_string($outputMode)) {
+            $name       = $outputMode;
+            $outputMode = 0;
+        }
+
+        if (!isset(self::$_counters['mode_' . $outputMode][$name])) {
+            self::$_counters['mode_' . $outputMode][$name] = 0;
+        }
+
+        self::$_counters['mode_' . $outputMode][$name]++;
+
+        if ($outputMode == 1) {
+            echo '<pre>' . $name . ' = ' . self::$_counters['mode_' . $outputMode][$name] . '</pre>';
+        }
+
+        return self::$_counters['mode_' . $outputMode][$name];
     }
 
     /**
@@ -1996,12 +2009,12 @@ class JBDump
         }
 
         $output   = array();
-        $output[] = "<pre>------------------------------" . PHP_EOL;
+        $output[] = '<pre>------------------------------' . PHP_EOL;
         $output[] = $varname . ' = ';
         $output[] = rtrim($printrOut, PHP_EOL);
-        $output[] = PHP_EOL . "------------------------------</pre>" . PHP_EOL;
+        $output[] = PHP_EOL . '------------------------------</pre>' . PHP_EOL;
         if (!self::isAjax()) {
-            echo '<pre class="jbdump" style="text-align: left;">' . implode('', $output) . "</pre>" . PHP_EOL;
+            echo '<pre class="jbdump" style="text-align: left;">' . implode('', $output) . '</pre>' . PHP_EOL;
         } else {
             echo implode('', $output);
         }
@@ -2579,11 +2592,10 @@ class JBDump
 
                 $_tmp['func'] = $info['class']
                     . ' ' . $info['type']
-                    . ' ' . $info['function']
-                    . '(' . @count($info['args']) . ')';
+                    . ' ' . $info['function'] . '()';
+
             } else {
-                $_tmp['func'] = $info['function']
-                    . '(' . @count($info['args']) . ')';
+                $_tmp['func'] = $info['function'] . '()';
             }
 
             $args = isset($info['args']) ? $info['args'] : array();
