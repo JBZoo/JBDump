@@ -313,19 +313,20 @@ class JBDump
 
                 if ($count > 0) {
 
+                    $timStd = $count > 1 ? ' (&plusmn;' . self::_profilerFormatTime($this->_stdDev($timeDiffs), true, 2) . ')' : '';
+                    $memStd = $count > 1 ? ' (&plusmn;' . self::_profilerFormatMemory($this->_stdDev($memDiffs), true) . ')' : '';
+
                     $output = array(
                         '<pre>JBDump ProfilerPairs / "' . $label . '"',
                         'Count  = ' . $count,
                         'Time   = ' . implode(";\t\t", array(
-                            'ave: ' . self::_profilerFormatTime(array_sum($timeDiffs) / $count, true, 2),
-                            'std: ' . $count > 1 ? self::_profilerFormatTime($this->_stdDev($timeDiffs), true, 2) : 0,
+                            'ave: ' . self::_profilerFormatTime(array_sum($timeDiffs) / $count, true, 2) . $timStd,
                             'sum: ' . self::_profilerFormatTime(array_sum($timeDiffs), true, 2),
                             'min(' . (array_search(min($timeDiffs), $timeDiffs) + 1) . '):' . self::_profilerFormatTime(min($timeDiffs), true, 2),
                             'max(' . (array_search(max($timeDiffs), $timeDiffs) + 1) . '): ' . self::_profilerFormatTime(max($timeDiffs), true, 2),
                         )),
                         'Memory = ' . implode(";\t\t", array(
-                            'ave: ' . self::_profilerFormatMemory(array_sum($memDiffs) / $count, true),
-                            'std: ' . $count > 1 ? self::_profilerFormatMemory($this->_stdDev($memDiffs), true, 2) : 0,
+                            'ave: ' . self::_profilerFormatMemory(array_sum($memDiffs) / $count, true) . $memStd,
                             'sum: ' . self::_profilerFormatMemory(array_sum($memDiffs), true),
                             'min(' . (array_search(min($memDiffs), $memDiffs) + 1) . '): ' . self::_profilerFormatMemory(min($memDiffs), true),
                             'max(' . (array_search(max($memDiffs), $memDiffs) + 1) . '): ' . self::_profilerFormatMemory(max($memDiffs), true),
