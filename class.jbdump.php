@@ -318,12 +318,14 @@ class JBDump
                         'Count  = ' . $count,
                         'Time   = ' . implode(";\t\t", array(
                             'ave: ' . self::_profilerFormatTime(array_sum($timeDiffs) / $count, true, 2),
+                            'std: ' . $count > 1 ? self::_profilerFormatTime($this->_stdDev($timeDiffs), true, 2) : 0,
                             'sum: ' . self::_profilerFormatTime(array_sum($timeDiffs), true, 2),
                             'min(' . (array_search(min($timeDiffs), $timeDiffs) + 1) . '):' . self::_profilerFormatTime(min($timeDiffs), true, 2),
                             'max(' . (array_search(max($timeDiffs), $timeDiffs) + 1) . '): ' . self::_profilerFormatTime(max($timeDiffs), true, 2),
                         )),
                         'Memory = ' . implode(";\t\t", array(
                             'ave: ' . self::_profilerFormatMemory(array_sum($memDiffs) / $count, true),
+                            'std: ' . $count > 1 ? self::_profilerFormatMemory($this->_stdDev($memDiffs), true, 2) : 0,
                             'sum: ' . self::_profilerFormatMemory(array_sum($memDiffs), true),
                             'min(' . (array_search(min($memDiffs), $memDiffs) + 1) . '): ' . self::_profilerFormatMemory(min($memDiffs), true),
                             'max(' . (array_search(max($memDiffs), $memDiffs) + 1) . '): ' . self::_profilerFormatMemory(max($memDiffs), true),
@@ -1534,9 +1536,9 @@ class JBDump
         $trace = debug_backtrace();
 
         if (!$label) {
-           $traceInfo = $_this->_getOneTrace($trace[1]);
-           $line      = isset($trace[0]['line']) ? $trace[0]['line'] : 0;
-           $label      = $traceInfo['func'] . ', line #' . $line;
+            $traceInfo = $_this->_getOneTrace($trace[1]);
+            $line      = isset($trace[0]['line']) ? $trace[0]['line'] : 0;
+            $label     = $traceInfo['func'] . ', line #' . $line;
         }
 
         unset($trace[0]);
@@ -1690,7 +1692,10 @@ class JBDump
             $flags = ENT_QUOTES;
         }
 
-        return htmlSpecialChars((string)$data, $flags, $encoding, true);
+        $data = (string)$data;
+        // $data = iconv('WINDOWS-1251', 'UTF-8//TRANSLIT', $data);
+
+        return htmlspecialchars($data, $flags, $encoding, true);
     }
 
     /**
@@ -3588,6 +3593,38 @@ class JBDump
         return $out;
     }
 
+    /**
+     * @param array $data
+     * @param bool  $sample
+     * @return bool|float
+     */
+    protected function _stdDev(array $data, $sample = false)
+    {
+        $n = count($data);
+        if ($n === 0) {
+            trigger_error("The array has zero elements", E_USER_WARNING);
+            return false;
+        }
+
+        if ($sample && $n === 1) {
+            trigger_error("The array has only 1 element", E_USER_WARNING);
+            return false;
+        }
+
+        $mean  = array_sum($data) / $n;
+        $carry = 0.0;
+
+        foreach ($data as $val) {
+            $d = ((double)$val) - $mean;
+            $carry += $d * $d;
+        };
+
+        if ($sample) {
+            --$n;
+        }
+
+        return sqrt($carry / $n);
+    }
 }
 
 /**
