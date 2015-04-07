@@ -313,20 +313,31 @@ class JBDump
 
                 if ($count > 0) {
 
-                    $timStd = $count > 1 ? ' (&plusmn;' . self::_profilerFormatTime($this->_stdDev($timeDiffs), true, 2) . ')' : '';
-                    $memStd = $count > 1 ? ' (&plusmn;' . self::_profilerFormatMemory($this->_stdDev($memDiffs), true) . ')' : '';
+                    $timeAvg = array_sum($timeDiffs) / $count;
+                    $memoAvg = array_sum($memDiffs) / $count;
+
+                    $timeStd = $memoStd = '';
+                    if ($count > 1) {
+                        $timeStdValue = $this->_stdDev($timeDiffs);
+                        $memoStdValue = $this->_stdDev($memDiffs);
+
+                        $timeStd = ' <span title="' . round(($timeStdValue / $timeAvg) * 100) . '%">(&plusmn;'
+                            . self::_profilerFormatTime($timeStdValue, true, 2) . ')</span>';
+                        $memoStd = ' <span title="' . round(($memoStdValue / $memoAvg) * 100) . '%">(&plusmn;'
+                            . self::_profilerFormatMemory($memoStdValue, true) . ')</span>';
+                    }
 
                     $output = array(
                         '<pre>JBDump ProfilerPairs / "' . $label . '"',
                         'Count  = ' . $count,
                         'Time   = ' . implode(";\t\t", array(
-                            'ave: ' . self::_profilerFormatTime(array_sum($timeDiffs) / $count, true, 2) . $timStd,
+                            'ave: ' . self::_profilerFormatTime($timeAvg, true, 2) . $timeStd,
                             'sum: ' . self::_profilerFormatTime(array_sum($timeDiffs), true, 2),
                             'min(' . (array_search(min($timeDiffs), $timeDiffs) + 1) . '):' . self::_profilerFormatTime(min($timeDiffs), true, 2),
                             'max(' . (array_search(max($timeDiffs), $timeDiffs) + 1) . '): ' . self::_profilerFormatTime(max($timeDiffs), true, 2),
                         )),
                         'Memory = ' . implode(";\t\t", array(
-                            'ave: ' . self::_profilerFormatMemory(array_sum($memDiffs) / $count, true) . $memStd,
+                            'ave: ' . self::_profilerFormatMemory($memoAvg, true) . $memoStd,
                             'sum: ' . self::_profilerFormatMemory(array_sum($memDiffs), true),
                             'min(' . (array_search(min($memDiffs), $memDiffs) + 1) . '): ' . self::_profilerFormatMemory(min($memDiffs), true),
                             'max(' . (array_search(max($memDiffs), $memDiffs) + 1) . '): ' . self::_profilerFormatMemory(max($memDiffs), true),
