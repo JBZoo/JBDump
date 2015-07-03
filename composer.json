@@ -26,6 +26,6 @@
         "php": ">=5.3.10"
     },
     "autoload": {
-        "files": ["class.jbdump.php"]
+        "files": ["autoload.php"]
     }
 }
