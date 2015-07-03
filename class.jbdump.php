@@ -1286,15 +1286,19 @@ class JBDump
      * Render variable as phpArray
      * @param mixed  $var
      * @param string $name
+     * @param bool   $isReturn
      * @return mixed
      */
-    public static function phpArray($var, $varname = 'varName', $params = array())
+    public static function phpArray($var, $varname = 'varName', $isReturn = false)
     {
         if (!self::isDebug()) {
             return false;
         }
 
         $output = JBDump_array2php::toString($var, $varname);
+        if ($isReturn) {
+            return $output;
+        }
 
         $_this = self::i();
         $_this->_dumpRenderHtml($output, $varname, $params);
@@ -2028,17 +2032,28 @@ class JBDump
         }
 
         $printrOut = print_r($data, true);
-        $printrOut = $this->_htmlChars($printrOut);
+        if (!self::isCli()) {
+            $printrOut = $this->_htmlChars($printrOut);
+        }
 
         if (self::isAjax()) {
             $printrOut = str_replace('] =&gt;', '] =>', $printrOut);
         }
 
         $output   = array();
-        $output[] = '<pre>------------------------------' . PHP_EOL;
+        if (!self::isCli()) {
+            $output[] = '<pre>------------------------------' . PHP_EOL;
+        }
+
         $output[] = $varname . ' = ';
         $output[] = rtrim($printrOut, PHP_EOL);
-        $output[] = PHP_EOL . '------------------------------</pre>' . PHP_EOL;
+
+        if (!self::isCli()) {
+            $output[] = PHP_EOL . '------------------------------</pre>' . PHP_EOL;
+        } else {
+            $output[] = PHP_EOL;
+        }
+
         if (!self::isAjax()) {
             echo '<pre class="jbdump" style="text-align: left;">' . implode('', $output) . '</pre>' . PHP_EOL;
         } else {
@@ -3389,13 +3404,12 @@ class JBDump
      */
     public static function isAjax()
     {
-
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])
             && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest'
         ) {
             return true;
 
-        } elseif (php_sapi_name() == 'cli') {
+        } elseif (self::isCli()) {
             return true;
 
         } elseif (function_exists('apache_request_headers')) {
@@ -3415,6 +3429,15 @@ class JBDump
         }
 
         return false;
+    }
+
+    /**
+     * Check invocation of PHP is from the command line (CLI)
+     * @return  bool
+     */
+    public static function isCli()
+    {
+        return php_sapi_name() == 'cli';
     }
 
     /**
