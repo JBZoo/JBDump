@@ -2046,6 +2046,18 @@ class JBDump
         }
 
         $output[] = $varname . ' = ';
+        if (self::isCli()) {
+            $trace = debug_backtrace();
+            unset($trace[-1], $trace[0], $trace[1]);
+            $trace = $this->convertTrace($trace);
+            reset($trace);
+            $path = current($trace);
+            
+            if (preg_match('#\/.*?([a-z\.]*)\s:\s(\d*)#', $path, $matches)) {
+                $output[] = $matches[1] . ':' . $matches[2] . ' | ';
+            }
+            
+        }
         $output[] = rtrim($printrOut, PHP_EOL);
 
         if (!self::isCli()) {
