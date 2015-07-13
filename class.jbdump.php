@@ -2053,7 +2053,7 @@ class JBDump
             reset($trace);
             $path = current($trace);
             
-            if (preg_match('#\/.*?([a-z\.]*)\s:\s(\d*)#', $path, $matches)) {
+            if (preg_match('#\/.*?([a-z\.]*)\s:\s(\d*)#i', $path, $matches)) {
                 $output[] = $matches[1] . ':' . $matches[2] . ' | ';
             }
             
