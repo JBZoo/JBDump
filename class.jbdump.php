@@ -2046,18 +2046,6 @@ class JBDump
         }
 
         $output[] = $varname . ' = ';
-        if (self::isCli()) {
-            $trace = debug_backtrace();
-            unset($trace[-1], $trace[0], $trace[1]);
-            $trace = $this->convertTrace($trace);
-            reset($trace);
-            $path = current($trace);
-            
-            if (preg_match('#\/.*?([a-z\.]*)\s:\s(\d*)#i', $path, $matches)) {
-                $output[] = $matches[1] . ':' . $matches[2] . ' | ';
-            }
-            
-        }
         $output[] = rtrim($printrOut, PHP_EOL);
 
         if (!self::isCli()) {
@@ -2274,7 +2262,7 @@ class JBDump
                 // get entries
                 foreach ($keys as $key) {
                     $value = null;
-                    if ($_is_object) {
+                    if ($_is_object && isset($data->$key)) {
                         $value = $data->$key;
                     } else {
                         if (array_key_exists($key, $data)) {
@@ -2461,6 +2449,10 @@ class JBDump
     {
         $isExpanded = $this->_isExpandedLevel();
 
+        if (0 === strpos($name, '&lt;! methods of "')) {
+            $isExpanded = false;
+        }
+        
         ?>
         <li class="jbchild">
             <div
@@ -2484,6 +2476,14 @@ class JBDump
      */
     protected function _object($data, $name)
     {
+        
+        static $objectIdList = array();
+        
+        $objectId = spl_object_hash($data);
+        if (!isset($objectIdList[$objectId])) {
+            $objectIdList[$objectId] = count($objectIdList);
+        }
+        
         $count      = count(@get_object_vars($data));
         $isExpand   = $count > 0 || self::$_config['dump']['showMethods'];
         $isExpanded = $this->_isExpandedLevel();
@@ -2492,8 +2492,12 @@ class JBDump
         <li class="jbchild">
         <div class="jbelement<?php echo $isExpand ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
             <?php if ($isExpand) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
-            <span class="jbname"><?php echo $name; ?></span>
-            (<span class="jbtype jbtype-object"><?php echo get_class($data); ?></span>, <?php echo $count; ?>)
+            <span class="jbname" title="splHash=<?php echo $objectId;?>"><?php echo $name; ?></span>
+            (
+                <span class="jbtype jbtype-object"><?php echo get_class($data); ?></span>
+                <span style="text-decoration: underline;" title="splHash=<?php echo $objectId;?>">id:<?php echo $objectIdList[$objectId];?></span>,
+                l:<?php echo $count; ?>
+            )
         </div>
         <?php if ($isExpand) {
         $this->_vars($data, $isExpanded);
