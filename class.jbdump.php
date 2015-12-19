@@ -2262,7 +2262,7 @@ class JBDump
                 // get entries
                 foreach ($keys as $key) {
                     $value = null;
-                    if ($_is_object && isset($data->$key)) {
+                    if ($_is_object && property_exists($data, $key)) {
                         $value = $data->$key;
                     } else {
                         if (array_key_exists($key, $data)) {
