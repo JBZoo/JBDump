@@ -1,5 +1,8 @@
 {
-    "name": "smetdenis/jbdump",
+    "name": "jbzoo/jbdump",
+    "replace": {
+        "smetdenis/jbdump": "*"
+    },    
     "type": "library",
     "description": "Script for debug and dump PHP variables and other stuff. This tool is a nice replacement for print_r() and var_dump() functions.",
     "license": "MIT",    
