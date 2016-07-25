@@ -2265,7 +2265,7 @@ class JBDump
                     if ($_is_object && property_exists($data, $key)) {
                         $value = $data->$key;
                     } else {
-                        if (array_key_exists($key, $data)) {
+                        if (is_array($data) && array_key_exists($key, $data)) {
                             $value = $data[$key];
                         }
                     }
