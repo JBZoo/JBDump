@@ -2275,8 +2275,9 @@ class JBDump
 
                 // get methods
                 if ($_is_object && self::$_config['dump']['showMethods']) {
-                    $methods = $this->_getMethods($data);
-                    $this->_dump($methods, '&lt;! methods of "' . get_class($data) . '" !&gt;');
+                    if ($methods = $this->_getMethods($data)) {
+                        $this->_dump($methods, '&lt;! methods of "' . get_class($data) . '" !&gt;');
+                    }
                 }
                 ?>
             </ul>
