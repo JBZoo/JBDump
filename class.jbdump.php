@@ -2031,7 +2031,12 @@ class JBDump
             $data = 'NULL';
         }
 
-        $printrOut = print_r($data, true);
+        if (is_string($data) && strlen($data) == 0) {
+            $printrOut = '""';
+        } else {
+            $printrOut = print_r($data, true);
+        }
+
         if (!self::isCli()) {
             $printrOut = $this->_htmlChars($printrOut);
         }
