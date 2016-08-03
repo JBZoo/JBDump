@@ -40,3 +40,5 @@ include './jbdump/class.jbdump.php';
 ## Live demo
 http://jbdump.org/test/
 
+## Composer
+composer require "jbzoo/jbdump:1.x-dev"
