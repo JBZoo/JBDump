@@ -16,7 +16,6 @@
  * if (file_exists( dirname(__FILE__) . '/class.jbdump.php')) { require_once dirname(__FILE__) . '/class.jbdump.php'; }
  * *
  * @package     JBDump
- * @version     1.4.4
  * @copyright   Copyright (c) 2009-2015 JBDump.org
  * @license     http://www.gnu.org/licenses/gpl.html GNU/GPL
  * @author      SmetDenis <admin@JBDump.org>, <admin@jbzoo.com>
@@ -131,7 +130,7 @@ class JBDump
      * Library version
      * @var string
      */
-    const VERSION = '1.4.4';
+    const VERSION = '1.5.1';
 
     /**
      * Library version
