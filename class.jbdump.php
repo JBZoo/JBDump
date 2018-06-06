@@ -2461,12 +2461,12 @@ class JBDump
         ?>
         <li class="jbchild">
             <div
-                class="jbelement<?php echo count($data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
-                <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
+                class="jbelement<?php echo count((array)$data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
+                <?php if (count((array)$data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
                 <span class="jbname"><?php echo $name; ?></span> (<span
-                    class="jbtype jbtype-array">Array</span>, <?php echo count($data); ?>)
+                    class="jbtype jbtype-array">Array</span>, <?php echo count((array)$data); ?>)
             </div>
-            <?php if (count($data)) {
+            <?php if (count((array)$data)) {
                 $this->_vars($data, $isExpanded);
             } ?>
         </li>
@@ -2523,8 +2523,8 @@ class JBDump
         ?>
         <li class="jbchild">
             <div
-                class="jbelement<?php echo count($data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
-                <?php if (count($data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
+                class="jbelement<?php echo count((array)$data) > 0 ? ' jbexpand' : ''; ?> <?= $isExpanded ? 'jbopened' : ''; ?>"
+                <?php if (count((array)$data) > 0) { ?> onClick="jbdump.toggle(this);"<?php } ?>>
                 <span class="jbname"><?php echo $name; ?></span> (<span class="jbtype jbtype-closure">Closure</span>)
                 <span class="jbvalue"><?php echo get_class($data); ?></span>
             </div>
@@ -3656,7 +3656,7 @@ class JBDump
      */
     protected function _stdDev(array $data, $sample = false)
     {
-        $n = count($data);
+        $n = count((array)$data);
         if ($n === 0) {
             trigger_error("The array has zero elements", E_USER_WARNING);
             return false;
