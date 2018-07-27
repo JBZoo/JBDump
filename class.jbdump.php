@@ -130,7 +130,7 @@ class JBDump
      * Library version
      * @var string
      */
-    const VERSION = '1.5.1';
+    const VERSION = '1.5.2';
 
     /**
      * Library version
@@ -157,7 +157,7 @@ class JBDump
      * Site url
      * @var string
      */
-    protected $_site = 'http://jbdump.org/';
+    protected $_site = 'https://github.com/JBZoo/JBDump';
 
     /**
      * Last backtrace
