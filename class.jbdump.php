@@ -24,9 +24,6 @@
  * @link        http://code.google.com/intl/ru-RU/apis/chart/index.html
  */
 
-// Check PHP version
-!version_compare(PHP_VERSION, '5.3.10', '=>') or die('Your host needs to use PHP 5.3.10 or higher to run JBDump');
-
 /**
  * Class JBDump
  */
